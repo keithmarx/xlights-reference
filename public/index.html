@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>xLights Show Reference</title>
+<style>
+:root {
+  --bg:#0d0d0d; --bg2:#1a1a1a; --bg3:#252525; --border:#2e2e2e;
+  --red:#cc2222; --green:#44aa44; --gold:#ccaa22;
+  --blue:#4488cc; --purple:#9944cc; --orange:#cc7733;
+  --text:#e0e0e0; --text2:#888;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Consolas','Monaco',monospace;font-size:13px;height:100vh;display:flex;flex-direction:column;}
+a{color:var(--blue);}
+
+/* ── Auth screens ── */
+.auth-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#0a1a0a 0%,var(--bg) 70%);}
+.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:36px 40px;width:360px;}
+.auth-box h1{font-size:20px;color:var(--gold);margin-bottom:4px;}
+.auth-box .sub{font-size:12px;color:var(--text2);margin-bottom:28px;}
+.auth-box .form-row{margin-bottom:14px;}
+.auth-box label{display:block;font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:4px;}
+.auth-box input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:4px;font-family:inherit;font-size:13px;}
+.auth-box input:focus{outline:none;border-color:var(--gold);}
+.auth-box .btn-primary{width:100%;background:var(--green);color:#000;border:none;padding:10px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:bold;margin-top:4px;}
+.auth-box .btn-primary:hover{background:#55bb55;}
+.auth-box .btn-primary:disabled{background:#444;color:#666;cursor:default;}
+.auth-error{color:var(--red);font-size:12px;margin-top:10px;min-height:16px;}
+.auth-logo{text-align:center;font-size:32px;margin-bottom:16px;}
+
+/* ── Header ── */
+header{background:linear-gradient(135deg,#1a0000,#001200,#1a0000);border-bottom:2px solid var(--red);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;}
+header h1{font-size:17px;color:var(--gold);}
+.header-meta{font-size:11px;color:var(--text2);}
+.header-stats{display:flex;gap:14px;margin-left:auto;}
+.stat{text-align:center;}
+.stat .n{font-size:18px;font-weight:bold;color:var(--green);}
+.stat .l{font-size:10px;color:var(--text2);text-transform:uppercase;}
+.header-btns{display:flex;gap:8px;align-items:center;}
+.hbtn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:5px 11px;border-radius:4px;cursor:pointer;font-size:12px;}
+.hbtn:hover{border-color:var(--gold);color:var(--gold);}
+.hbtn.red:hover{border-color:var(--red);color:var(--red);}
+.user-badge{font-size:11px;color:var(--text2);}
+.user-badge span{color:var(--green);}
+
+/* ── Tabs ── */
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.tab{padding:9px 18px;cursor:pointer;border-bottom:3px solid transparent;color:var(--text2);}
+.tab:hover{color:var(--text);background:var(--bg3);}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold);background:var(--bg3);}
+
+/* ── Search ── */
+.search-bar{padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.search-bar input{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:4px;font-family:inherit;font-size:13px;}
+.search-bar input:focus{outline:none;border-color:var(--gold);}
+.filter-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 9px;border-radius:4px;cursor:pointer;font-size:11px;}
+.filter-btn.active,.filter-btn:hover{border-color:var(--green);color:var(--green);}
+
+/* ── Pages ── */
+.pages{flex:1;overflow:hidden;}
+.page{display:none;height:100%;overflow-y:auto;}
+.page.active{display:block;}
+
+/* ── Table ── */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{background:var(--bg3);color:var(--text2);text-transform:uppercase;font-size:11px;letter-spacing:.4px;padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;position:sticky;top:0;z-index:1;}
+th:hover{color:var(--text);}
+th.asc::after{content:' ↑';color:var(--gold);}
+th.desc::after{content:' ↓';color:var(--gold);}
+td{padding:6px 10px;border-bottom:1px solid #1d1d1d;vertical-align:middle;white-space:nowrap;}
+tr:hover td{background:var(--bg3);cursor:pointer;}
+tr.exp td{background:#111;}
+.ch{font-family:monospace;color:var(--blue);}
+.ch2{font-size:10px;color:#555;display:block;}
+.ctag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:bold;}
+.c-h16{background:#0d1a0d;color:#88cc88;border:1px solid #2a5a2a;}
+.c-hlr{background:#0d0d1a;color:#8888cc;border:1px solid #2a2a5a;}
+.c-fbb{background:#1a0d1a;color:#cc88cc;border:1px solid #5a2a5a;}
+.c-none{background:var(--bg2);color:var(--text2);border:1px solid var(--border);}
+.ttag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;background:var(--bg3);color:var(--text2);border:1px solid #222;}
+.port-tag{color:var(--gold);font-weight:bold;}
+.proto-tag{color:var(--green);font-size:11px;}
+.wire-badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;}
+.wire-badge.has{background:#0a1a0a;border:1px solid var(--green);color:var(--green);cursor:pointer;}
+.wire-badge.none{background:var(--bg3);border:1px solid #333;color:#555;cursor:pointer;}
+.wire-badge:hover{opacity:.8;}
+
+/* ── Detail row ── */
+.detail-row td{background:#0e0e0e;padding:10px 14px 12px 40px;white-space:normal;}
+.dsec{margin-bottom:8px;}
+.dsec h4{color:var(--text2);font-size:10px;text-transform:uppercase;margin-bottom:4px;letter-spacing:.5px;}
+.pills{display:flex;flex-wrap:wrap;gap:4px;}
+.pill-sub{background:#111a2a;border:1px solid #1a3a5a;border-radius:3px;padding:2px 8px;font-size:11px;color:var(--blue);}
+.pill-alias{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:2px 8px;font-size:11px;color:var(--text2);}
+.pill-grp{background:#111100;border:1px solid #444400;border-radius:3px;padding:2px 8px;font-size:11px;color:var(--gold);}
+.face-ind{color:var(--purple);font-size:11px;}
+.dim-ind{color:var(--orange);font-size:11px;}
+.wiring-inline{background:#0a1a0a;border:1px solid #1a3a1a;border-radius:4px;padding:6px 10px;margin-top:6px;font-size:12px;line-height:1.8;}
+.wiring-inline .wf{color:var(--text2);margin-right:4px;}
+.wiring-inline .wv{color:var(--green);}
+.edit-wire-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:11px;margin-top:6px;}
+.edit-wire-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── Controllers ── */
+.ctrl-grid{padding:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;}
+.ctrl-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.ctrl-head{padding:10px 14px;display:flex;align-items:flex-start;gap:10px;border-bottom:2px solid transparent;}
+.ctrl-card.h16 .ctrl-head{background:#080f08;border-bottom-color:#2a5a2a;}
+.ctrl-card.hlr .ctrl-head{background:#08080f;border-bottom-color:#2a2a5a;}
+.ctrl-card.fbb .ctrl-head{background:#0f080f;border-bottom-color:#5a2a5a;}
+.ctrl-card.fpp .ctrl-head{background:#0f0808;border-bottom-color:#5a2a2a;}
+.ctrl-head h3{font-size:13px;}
+.ctrl-head .ip{margin-left:auto;font-size:12px;white-space:nowrap;}
+.ctrl-meta{padding:6px 14px;background:var(--bg3);display:flex;gap:14px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.cm{font-size:11px;}
+.cm .cl{color:var(--text2);text-transform:uppercase;font-size:10px;}
+.cm .cv{color:var(--text);font-weight:bold;}
+.ctrl-ports{padding:4px 0;}
+.port-row{display:flex;align-items:center;padding:5px 14px;border-bottom:1px solid #181818;gap:8px;cursor:pointer;}
+.port-row:last-child{border-bottom:none;}
+.port-row:hover{background:var(--bg3);}
+.pnum{color:var(--gold);font-weight:bold;min-width:52px;font-size:12px;}
+.pmodel{color:var(--text);flex:1;font-size:12px;}
+.pch{color:var(--blue);font-size:11px;min-width:140px;}
+.pnodes{color:var(--text2);font-size:11px;min-width:80px;}
+.pwire{font-size:11px;}
+.ctrl-empty{padding:14px;color:var(--text2);font-style:italic;text-align:center;font-size:12px;}
+
+/* ── Groups ── */
+.groups-grid{padding:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}
+.grp-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.grp-head{padding:7px 12px;background:#0f0f00;border-bottom:1px solid #333300;display:flex;align-items:center;justify-content:space-between;}
+.grp-head h3{font-size:12px;color:var(--gold);}
+.grp-head .cnt{font-size:11px;color:var(--text2);}
+.grp-alias{font-size:10px;color:#555;padding:3px 12px 0;}
+.grp-members{padding:6px 12px;}
+.grp-member{font-size:12px;color:var(--text);padding:2px 0;border-bottom:1px solid #181818;}
+.grp-member:last-child{border-bottom:none;}
+
+/* ── Overview ── */
+.overview{padding:14px;}
+.ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:16px;}
+.ov-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px 14px;}
+.ov-card h3{font-size:10px;text-transform:uppercase;color:var(--text2);margin-bottom:6px;}
+.ov-card .big{font-size:24px;font-weight:bold;color:var(--green);}
+.ov-card .det{font-size:11px;color:var(--text2);margin-top:4px;line-height:1.5;}
+.tipbox{background:#080f08;border:1px solid #1a3a1a;border-radius:6px;padding:12px 14px;margin-bottom:14px;}
+.tipbox h3{color:var(--green);font-size:12px;margin-bottom:8px;}
+.tipbox ul{list-style:none;}
+.tipbox li{padding:2px 0;color:var(--text2);font-size:12px;}
+.tipbox li::before{content:'→ ';color:var(--green);}
+
+/* ── Import ── */
+.import-page{padding:30px;max-width:600px;margin:0 auto;}
+.import-page h2{color:var(--gold);font-size:18px;margin-bottom:8px;}
+.import-page p{color:var(--text2);font-size:13px;margin-bottom:24px;line-height:1.6;}
+.file-inputs{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
+.file-row{display:flex;align-items:center;gap:10px;}
+.file-row label{min-width:160px;color:var(--text2);font-size:12px;}
+.file-row input[type=file]{color:var(--text);font-size:12px;flex:1;}
+.file-row .picked{color:var(--green);font-size:12px;}
+.btn-primary{background:var(--green);color:#000;border:none;padding:10px 24px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:bold;}
+.btn-primary:hover{background:#55bb55;}
+.btn-primary:disabled{background:#444;color:#666;cursor:default;}
+.upload-status{margin-top:12px;font-size:12px;}
+.upload-status.ok{color:var(--green);}
+.upload-status.err{color:var(--red);}
+
+/* ── Modals ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+.modal h2{color:var(--gold);font-size:15px;margin-bottom:16px;}
+.form-row{margin-bottom:12px;}
+.form-row label{display:block;color:var(--text2);font-size:11px;text-transform:uppercase;margin-bottom:4px;}
+.form-row input,.form-row textarea,.form-row select{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:4px;font-family:inherit;font-size:13px;}
+.form-row input:focus,.form-row textarea:focus,.form-row select:focus{outline:none;border-color:var(--gold);}
+.form-row textarea{min-height:70px;resize:vertical;}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
+.btn-cancel{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:7px 16px;border-radius:4px;cursor:pointer;font-family:inherit;}
+.btn-save{background:var(--green);color:#000;border:none;padding:7px 16px;border-radius:4px;cursor:pointer;font-family:inherit;font-weight:bold;}
+.btn-del{background:#330000;border:1px solid var(--red);color:var(--red);padding:7px 16px;border-radius:4px;cursor:pointer;font-family:inherit;margin-right:auto;}
+
+/* ── Users panel ── */
+.users-modal{width:520px;}
+.user-row{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:10px;}
+.user-row:last-child{border-bottom:none;}
+.user-name{flex:1;font-weight:bold;}
+.user-role{font-size:11px;padding:2px 7px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);}
+.user-role.admin{border-color:var(--gold);color:var(--gold);}
+.user-role.user{border-color:var(--blue);color:var(--blue);}
+.user-del-btn{background:none;border:1px solid #440000;color:#aa3333;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:11px;}
+.user-del-btn:hover{border-color:var(--red);color:var(--red);}
+.add-user-section{margin-top:16px;padding-top:16px;border-top:1px solid var(--border);}
+.add-user-section h3{font-size:12px;color:var(--text2);text-transform:uppercase;margin-bottom:10px;}
+.add-user-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.add-user-grid .form-row{margin-bottom:0;}
+.add-user-footer{display:flex;align-items:center;gap:8px;margin-top:10px;}
+.add-user-footer select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:4px;font-family:inherit;font-size:13px;}
+.modal-err{color:var(--red);font-size:12px;margin-top:8px;min-height:16px;}
+
+mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
+.no-results{padding:40px;text-align:center;color:var(--text2);}
+</style>
+</head>
+<body>
+
+<!-- ── Setup screen ── -->
+<div class="auth-wrap" id="screen-setup" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo">🎄</div>
+    <h1>xLights Show Reference</h1>
+    <div class="sub">First-time setup — create your admin account</div>
+    <div class="form-row"><label>Username</label><input id="setup-user" autocomplete="username"></div>
+    <div class="form-row"><label>Password <span style="color:#555">(min 6 chars)</span></label><input id="setup-pass" type="password" autocomplete="new-password"></div>
+    <div class="form-row"><label>Confirm Password</label><input id="setup-pass2" type="password" autocomplete="new-password"></div>
+    <button class="btn-primary" onclick="doSetup()">Create Admin Account</button>
+    <div class="auth-error" id="setup-err"></div>
+  </div>
+</div>
+
+<!-- ── Login screen ── -->
+<div class="auth-wrap" id="screen-login" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo">🎄</div>
+    <h1>xLights Show Reference</h1>
+    <div class="sub">Sign in to continue</div>
+    <div class="form-row"><label>Username</label><input id="login-user" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="form-row"><label>Password</label><input id="login-pass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-primary" id="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="auth-error" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ── Main app ── -->
+<div id="app" style="display:none;flex:1;flex-direction:column;overflow:hidden;display:none">
+
+  <header>
+    <div>
+      <h1 id="show-title">xLights Show Reference</h1>
+      <div class="header-meta" id="show-meta"></div>
+    </div>
+    <div class="header-stats" id="header-stats"></div>
+    <div class="header-btns">
+      <div class="user-badge">Signed in as <span id="current-user"></span></div>
+      <button class="hbtn" onclick="showImport()">↑ Import XML</button>
+      <button class="hbtn" id="users-btn" onclick="openUsersModal()" style="display:none">👥 Users</button>
+      <button class="hbtn red" onclick="doLogout()">Sign Out</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-page="overview">Overview</div>
+    <div class="tab" data-page="models">Models</div>
+    <div class="tab" data-page="controllers">Controllers</div>
+    <div class="tab" data-page="groups">Groups</div>
+  </div>
+
+  <div class="pages">
+
+    <!-- Import -->
+    <div class="page active" id="page-import">
+      <div class="import-page">
+        <h2>Import xLights Config Files</h2>
+        <p>Upload <strong>xlights_networks.xml</strong> (controllers) and <strong>xlights_rgbeffects.xml</strong> (models). Both live in your xLights show folder. Upload either one independently to refresh just that section — wiring notes are always preserved.</p>
+        <div class="file-inputs">
+          <div class="file-row">
+            <label>xlights_networks.xml</label>
+            <input type="file" id="f-networks" accept=".xml" onchange="fileChosen(this,'lbl-net')">
+            <span class="picked" id="lbl-net"></span>
+          </div>
+          <div class="file-row">
+            <label>xlights_rgbeffects.xml</label>
+            <input type="file" id="f-rgbeffects" accept=".xml" onchange="fileChosen(this,'lbl-rgb')">
+            <span class="picked" id="lbl-rgb"></span>
+          </div>
+        </div>
+        <button class="btn-primary" id="import-btn" onclick="doImport()">Import Files</button>
+        <div class="upload-status" id="import-status"></div>
+      </div>
+    </div>
+
+    <!-- Overview -->
+    <div class="page" id="page-overview">
+      <div class="overview">
+        <div class="tipbox">
+          <h3>Quick Troubleshooting</h3>
+          <ul>
+            <li>Know the channel number? → Models tab, sort by Start Channel</li>
+            <li>Know the controller? → Controllers tab, see all port assignments and wiring</li>
+            <li>Looking for a prop group? → Groups tab</li>
+            <li>Need to add wire info? → Click any model row → Edit Wiring</li>
+          </ul>
+        </div>
+        <div class="ov-grid" id="ov-ctrl-cards"></div>
+      </div>
+    </div>
+
+    <!-- Models -->
+    <div class="page" id="page-models">
+      <div class="search-bar">
+        <input type="text" id="model-search" placeholder="Search name, channel, controller, group, type, wiring…" oninput="filterModels()">
+        <div id="ctrl-filters"></div>
+      </div>
+      <div class="table-wrap">
+        <table id="models-table">
+          <thead><tr>
+            <th style="width:24px"></th>
+            <th data-col="name">Name</th>
+            <th data-col="type">Type</th>
+            <th data-col="startCh">Start Ch</th>
+            <th data-col="endCh">End Ch</th>
+            <th data-col="nodes">Nodes</th>
+            <th data-col="controller">Controller</th>
+            <th>Port / Protocol</th>
+            <th data-col="wiring">Wiring</th>
+          </tr></thead>
+          <tbody id="models-tbody"></tbody>
+        </table>
+        <div class="no-results" id="no-results" style="display:none">No models match your search.</div>
+      </div>
+    </div>
+
+    <!-- Controllers -->
+    <div class="page" id="page-controllers">
+      <div class="ctrl-grid" id="ctrl-content"></div>
+    </div>
+
+    <!-- Groups -->
+    <div class="page" id="page-groups">
+      <div class="groups-grid" id="grp-content"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Wiring modal ── -->
+<div class="modal-bg" id="wire-modal">
+  <div class="modal">
+    <h2>Wiring — <span id="wire-model-name"></span></h2>
+    <div class="form-row"><label>Wire Color</label><input id="wf-color" placeholder="e.g. Red, White/Black, 18AWG"></div>
+    <div class="form-row"><label>Connector Type</label><input id="wf-connector" placeholder="e.g. 3-pin JST, Waterproof, Bare wire"></div>
+    <div class="form-row"><label>Physical Location</label><input id="wf-location" placeholder="e.g. Yard East, Roofline West, Front porch"></div>
+    <div class="form-row"><label>Wire Route / Run</label><textarea id="wf-route" placeholder="Describe how the wire runs from the controller to the prop…"></textarea></div>
+    <div class="form-row"><label>Power Injection</label><input id="wf-power" placeholder="e.g. 12V PSU, injected at midpoint"></div>
+    <div class="form-row"><label>Notes</label><textarea id="wf-notes" placeholder="Troubleshooting tips, known issues…"></textarea></div>
+    <div class="modal-btns">
+      <button class="btn-del" id="wire-del-btn" onclick="deleteWiring()">Delete</button>
+      <button class="btn-cancel" onclick="closeModal('wire-modal')">Cancel</button>
+      <button class="btn-save" onclick="saveWiring()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Users modal ── -->
+<div class="modal-bg" id="users-modal">
+  <div class="modal users-modal">
+    <h2>👥 User Management</h2>
+    <div id="users-list"></div>
+    <div class="add-user-section">
+      <h3>Add New User</h3>
+      <div class="add-user-grid">
+        <div class="form-row"><label>Username</label><input id="new-username" placeholder="username"></div>
+        <div class="form-row"><label>Password</label><input id="new-password" type="password" placeholder="min 6 chars"></div>
+      </div>
+      <div class="add-user-footer">
+        <select id="new-role"><option value="user">User</option><option value="admin">Admin</option></select>
+        <button class="btn-save" onclick="addUser()">Add User</button>
+        <button class="btn-cancel" onclick="closeModal('users-modal')">Close</button>
+      </div>
+      <div class="modal-err" id="users-err"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State ──────────────────────────────────────────────────────────────────
+let DATA = { controllers:[], models:[], groups:[], wiring:{} };
+let ME   = null;
+let sortCol='startCh', sortDir=1, activeCtrl='all', expanded=new Set(), wireTarget=null;
+
+// ─── Boot ────────────────────────────────────────────────────────────────────
+async function boot() {
+  // Check setup
+  const s = await fetch('/api/auth/needs-setup').then(r=>r.json()).catch(()=>({needsSetup:false}));
+  if (s.needsSetup) { show('screen-setup'); return; }
+  // Check auth
+  const me = await fetch('/api/auth/me').then(r=>r.ok?r.json():null).catch(()=>null);
+  if (!me) { show('screen-login'); return; }
+  await afterLogin(me);
+}
+
+async function afterLogin(user) {
+  ME = user;
+  show('app');
+  document.getElementById('current-user').textContent = user.username;
+  if (user.role === 'admin') document.getElementById('users-btn').style.display = '';
+  const r = await fetch('/api/data');
+  if (r.ok) { DATA = await r.json(); if (!DATA.wiring) DATA.wiring={}; }
+  if (DATA.models?.length) { renderAll(); showTab('overview'); }
+  else showTab('import');
+}
+
+function show(id) {
+  ['screen-setup','screen-login','app'].forEach(i => {
+    const el = document.getElementById(i);
+    el.style.display = (i===id) ? (i==='app'?'flex':'flex') : 'none';
+  });
+  if (id==='app') { document.getElementById('app').style.flexDirection='column'; document.getElementById('app').style.overflow='hidden'; }
+}
+
+// ─── Setup ───────────────────────────────────────────────────────────────────
+async function doSetup() {
+  const u=v('setup-user'), p=v('setup-pass'), p2=v('setup-pass2');
+  if (!u||!p) return setErr('setup-err','Username and password required.');
+  if (p!==p2) return setErr('setup-err','Passwords do not match.');
+  if (p.length<6) return setErr('setup-err','Password must be at least 6 characters.');
+  const r = await post('/api/auth/setup',{username:u,password:p});
+  if (r.success) await afterLogin(r.user);
+  else setErr('setup-err', r.error||'Setup failed.');
+}
+
+// ─── Login / Logout ──────────────────────────────────────────────────────────
+async function doLogin() {
+  const btn = document.getElementById('login-btn');
+  btn.disabled=true; btn.textContent='Signing in…';
+  setErr('login-err','');
+  const r = await post('/api/auth/login',{username:v('login-user'),password:v('login-pass')});
+  if (r.success) { await afterLogin(r.user); }
+  else { setErr('login-err', r.error||'Login failed.'); btn.disabled=false; btn.textContent='Sign In'; }
+}
+async function doLogout() {
+  await fetch('/api/auth/logout',{method:'POST'});
+  ME=null; DATA={controllers:[],models:[],groups:[],wiring:{}};
+  show('screen-login');
+  document.getElementById('login-pass').value='';
+}
+
+// ─── Users modal ─────────────────────────────────────────────────────────────
+async function openUsersModal() {
+  setErr('users-err','');
+  document.getElementById('new-username').value='';
+  document.getElementById('new-password').value='';
+  const users = await fetch('/api/users').then(r=>r.json());
+  document.getElementById('users-list').innerHTML = users.map(u => `
+    <div class="user-row">
+      <span class="user-name">${u.username}${u.username===ME.username?' <span style="color:#555;font-weight:normal">(you)</span>':''}</span>
+      <span class="user-role ${u.role}">${u.role}</span>
+      ${u.username!==ME.username?`<button class="user-del-btn" onclick="deleteUser('${u.username}')">Remove</button>`:''}
+    </div>`).join('');
+  document.getElementById('users-modal').classList.add('open');
+}
+async function addUser() {
+  setErr('users-err','');
+  const u=v('new-username'), p=v('new-password'), role=document.getElementById('new-role').value;
+  if (!u||!p) return setErr('users-err','Username and password required.');
+  const r = await post('/api/users',{username:u,password:p,role});
+  if (r.success) { document.getElementById('new-username').value=''; document.getElementById('new-password').value=''; openUsersModal(); }
+  else setErr('users-err', r.error||'Failed to add user.');
+}
+async function deleteUser(username) {
+  if (!confirm(`Remove user "${username}"?`)) return;
+  const r = await fetch(`/api/users/${encodeURIComponent(username)}`,{method:'DELETE'}).then(r=>r.json());
+  if (r.success) openUsersModal();
+  else setErr('users-err', r.error||'Failed to remove user.');
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const v = id => document.getElementById(id)?.value?.trim()||'';
+function setErr(id,msg){ const el=document.getElementById(id); if(el) el.textContent=msg; }
+async function post(url,body){ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return r.json(); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(el=>el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); }));
+
+function ctrlClass(c){ if(c.includes('16SPE'))return 'c-h16'; if(c.includes('LR'))return 'c-hlr'; if(c==='FPPBB')return 'c-fbb'; return 'c-none'; }
+function ctrlLabel(c){ if(c==='Hinks Pix Flex 16SPE v3')return 'Hinks 16SPE'; if(c==='Hinks Pix Flex LR v1')return 'HinksLR'; if(c==='No Controller')return 'No Ctrl'; return c; }
+function fmtCh(n){ return n!=null?Number(n).toLocaleString():'–'; }
+function hl(text,q){ if(!q)return text; const i=text.toLowerCase().indexOf(q); if(i<0)return text; return text.slice(0,i)+`<mark>${text.slice(i,i+q.length)}</mark>`+text.slice(i+q.length); }
+function esc(s){ return s.replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+// ─── Tabs ────────────────────────────────────────────────────────────────────
+document.addEventListener('click',e=>{
+  const t=e.target.closest('.tab[data-page]'); if(t) showTab(t.dataset.page);
+});
+function showTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id));
+}
+function showImport(){ showTab('import'); }
+
+// ─── Import ──────────────────────────────────────────────────────────────────
+function fileChosen(el,lbl){ document.getElementById(lbl).textContent=el.files[0]?.name||''; }
+async function doImport(){
+  const net=document.getElementById('f-networks').files[0];
+  const rgb=document.getElementById('f-rgbeffects').files[0];
+  if(!net&&!rgb){ setImportStatus('err','Select at least one file.'); return; }
+  const btn=document.getElementById('import-btn');
+  btn.disabled=true; btn.textContent='Importing…'; setImportStatus('','');
+  const fd=new FormData();
+  if(net) fd.append('networks',net);
+  if(rgb) fd.append('rgbeffects',rgb);
+  try{
+    const r=await fetch('/api/import',{method:'POST',body:fd});
+    const j=await r.json();
+    if(!r.ok) throw new Error(j.error||'Import failed');
+    DATA=j.data; if(!DATA.wiring) DATA.wiring={};
+    setImportStatus('ok',`✓ ${DATA.controllers.length} controllers, ${DATA.models.length} models, ${DATA.groups.length} groups imported`);
+    renderAll(); showTab('overview');
+  }catch(e){ setImportStatus('err','✗ '+e.message); }
+  finally{ btn.disabled=false; btn.textContent='Import Files'; }
+}
+function setImportStatus(cls,msg){ const el=document.getElementById('import-status'); el.className='upload-status '+cls; el.textContent=msg; }
+
+// ─── Render all ──────────────────────────────────────────────────────────────
+function renderAll(){ updateHeader(); buildFilters(); filterModels(); renderControllers(); renderGroups(); renderOverview(); }
+
+function updateHeader(){
+  document.getElementById('show-title').textContent = DATA.show?.name||'xLights Show Reference';
+  document.getElementById('show-meta').textContent  = DATA.show?.xlightsVersion?`xLights ${DATA.show.xlightsVersion}`:'';
+  const wired=Object.keys(DATA.wiring||{}).length;
+  document.getElementById('header-stats').innerHTML=`
+    <div class="stat"><div class="n">${DATA.models.length}</div><div class="l">Models</div></div>
+    <div class="stat"><div class="n">${DATA.controllers.length}</div><div class="l">Controllers</div></div>
+    <div class="stat"><div class="n">${DATA.groups.length}</div><div class="l">Groups</div></div>
+    <div class="stat"><div class="n">${wired}</div><div class="l">Wired</div></div>`;
+}
+
+// ─── Filters ─────────────────────────────────────────────────────────────────
+function buildFilters(){
+  const ctrls=[...new Set(DATA.models.map(m=>m.controller))];
+  const div=document.getElementById('ctrl-filters');
+  div.innerHTML=`<button class="filter-btn active" data-cf="all">All</button>`+
+    ctrls.map(c=>`<button class="filter-btn" data-cf="${esc(c)}">${ctrlLabel(c)}</button>`).join('');
+  div.onclick=e=>{
+    if(!e.target.matches('[data-cf]'))return;
+    activeCtrl=e.target.dataset.cf;
+    div.querySelectorAll('[data-cf]').forEach(b=>b.classList.toggle('active',b.dataset.cf===activeCtrl));
+    filterModels();
+  };
+}
+
+// ─── Models table ─────────────────────────────────────────────────────────────
+function filterModels(){
+  const q=(document.getElementById('model-search')?.value||'').trim().toLowerCase();
+  let list=DATA.models;
+  if(activeCtrl!=='all') list=list.filter(m=>m.controller===activeCtrl);
+  if(q) list=list.filter(m=>{
+    const w=DATA.wiring[m.name]||{};
+    return [m.name,m.type,m.startChannel,m.controller,m.protocol,
+      ...(m.groups||[]),...(m.subModels||[]),...(m.aliases||[]),
+      w.color||'',w.location||'',w.route||'',w.notes||'',
+      m.endCh||'',m.ctrlRelCh||''].join(' ').toLowerCase().includes(q);
+  });
+  list=[...list].sort((a,b)=>{
+    let av,bv;
+    switch(sortCol){
+      case 'name':       av=a.name.toLowerCase();       bv=b.name.toLowerCase();       break;
+      case 'type':       av=a.type.toLowerCase();       bv=b.type.toLowerCase();       break;
+      case 'controller': av=a.controller.toLowerCase(); bv=b.controller.toLowerCase(); break;
+      case 'nodes':      av=a.nodes;                    bv=b.nodes;                    break;
+      case 'wiring':     av=DATA.wiring[a.name]?1:0;   bv=DATA.wiring[b.name]?1:0;   break;
+      case 'endCh':      av=a.endCh||a.ctrlEndCh||0;   bv=b.endCh||b.ctrlEndCh||0;   break;
+      default: av=a.absStartCh??(a.ctrlRelCh!=null?999999999+a.ctrlRelCh:0);
+               bv=b.absStartCh??(b.ctrlRelCh!=null?999999999+b.ctrlRelCh:0);
+    }
+    return av<bv?-sortDir:av>bv?sortDir:0;
+  });
+  const tbody=document.getElementById('models-tbody');
+  const nr=document.getElementById('no-results');
+  if(!list.length){tbody.innerHTML='';nr.style.display='block';return;}
+  nr.style.display='none';
+  tbody.innerHTML=list.map(m=>{
+    const exp=expanded.has(m.name);
+    const wire=DATA.wiring[m.name];
+    const start=m.ctrlRelCh!=null
+      ?`<span class="ch">Ch ${fmtCh(m.ctrlRelCh)}</span><span class="ch2">${m.startChannel}</span>`
+      :`<span class="ch">${fmtCh(m.absStartCh)}</span>`;
+    const end=m.endCh?`<span class="ch">${fmtCh(m.endCh)}</span>`:m.ctrlEndCh?`<span class="ch">Ch ${fmtCh(m.ctrlEndCh)}</span>`:'–';
+    const port=m.port?`<span class="port-tag">Port ${m.port}</span>${m.protocol?` <span class="proto-tag">${m.protocol}</span>`:''}` :'–';
+    const wireBadge=wire
+      ?`<span class="wire-badge has" onclick="openWire(event,'${esc(m.name)}')">📍 ${esc(wire.color||'wired')}</span>`
+      :`<span class="wire-badge none" onclick="openWire(event,'${esc(m.name)}')">+ wire</span>`;
+    let detail='';
+    if(exp){
+      const w=wire||{};
+      const wireHtml=wire?`<div class="wiring-inline">
+        ${w.color?`<span class="wf">Color:</span><span class="wv">${w.color}</span>&nbsp;&nbsp;`:''}
+        ${w.connector?`<span class="wf">Connector:</span><span class="wv">${w.connector}</span>&nbsp;&nbsp;`:''}
+        ${w.location?`<span class="wf">Location:</span><span class="wv">${w.location}</span><br>`:''}
+        ${w.route?`<span class="wf">Route:</span><span class="wv">${w.route}</span><br>`:''}
+        ${w.power?`<span class="wf">Power:</span><span class="wv">${w.power}</span><br>`:''}
+        ${w.notes?`<span class="wf">Notes:</span><span class="wv">${w.notes}</span>`:''}
+      </div>`:'';
+      const subHtml=m.subModels?.length?`<div class="dsec"><h4>Sub-Models</h4><div class="pills">${m.subModels.map(s=>`<span class="pill-sub">${s}</span>`).join('')}</div></div>`:'';
+      const aliasHtml=m.aliases?.length?`<div class="dsec"><h4>Aliases</h4><div class="pills">${m.aliases.map(a=>`<span class="pill-alias">${a}</span>`).join('')}</div></div>`:'';
+      const grpHtml=m.groups?.length?`<div class="dsec"><h4>Groups</h4><div class="pills">${m.groups.map(g=>`<span class="pill-grp">${g}</span>`).join('')}</div></div>`:'';
+      const meta=`<div style="font-size:11px;color:var(--text2);margin-top:6px">
+        String: ${m.stringType} &nbsp;|&nbsp; Channels: ${fmtCh(m.channels)}
+        ${m.brightness!=null?` &nbsp;|&nbsp; <span class="dim-ind">⬇ ${m.brightness}% brightness</span>`:''}
+        ${m.hasFace?` &nbsp;|&nbsp; <span class="face-ind">🎭 singing face</span>`:''}
+      </div>`;
+      detail=`<tr class="detail-row"><td colspan="9">
+        ${wireHtml}
+        <button class="edit-wire-btn" onclick="openWire(event,'${esc(m.name)}')">${wire?'Edit':'Add'} Wiring Info</button>
+        <div style="margin-top:10px">${subHtml}${aliasHtml}${grpHtml}${meta}</div>
+      </td></tr>`;
+    }
+    return `<tr class="${exp?'exp':''}" onclick="toggleRow('${esc(m.name)}')">
+      <td style="color:var(--text2);font-size:11px">${exp?'▼':'▶'}</td>
+      <td><strong>${hl(m.name,q)}</strong></td>
+      <td><span class="ttag">${m.type}</span></td>
+      <td>${start}</td><td>${end}</td>
+      <td>${fmtCh(m.nodes)}</td>
+      <td><span class="ctag ${ctrlClass(m.controller)}">${ctrlLabel(m.controller)}</span></td>
+      <td>${port}</td><td>${wireBadge}</td>
+    </tr>${detail}`;
+  }).join('');
+  document.querySelectorAll('#models-table th[data-col]').forEach(th=>{
+    th.classList.remove('asc','desc');
+    if(th.dataset.col===sortCol) th.classList.add(sortDir===1?'asc':'desc');
+  });
+}
+document.addEventListener('click',e=>{
+  const th=e.target.closest('th[data-col]');
+  if(!th||!th.closest('#models-table'))return;
+  sortDir=sortCol===th.dataset.col?-sortDir:1; sortCol=th.dataset.col; filterModels();
+});
+function toggleRow(name){ expanded.has(name)?expanded.delete(name):expanded.add(name); filterModels(); }
+
+// ─── Wiring modal ─────────────────────────────────────────────────────────────
+function openWire(e,name){
+  e.stopPropagation(); wireTarget=name;
+  document.getElementById('wire-model-name').textContent=name;
+  const w=DATA.wiring[name]||{};
+  ['color','connector','location','route','power','notes'].forEach(f=>{ document.getElementById('wf-'+f).value=w[f]||''; });
+  document.getElementById('wire-del-btn').style.display=Object.keys(w).length?'':'none';
+  document.getElementById('wire-modal').classList.add('open');
+}
+async function saveWiring(){
+  if(!wireTarget)return;
+  const body={color:v('wf-color'),connector:v('wf-connector'),location:v('wf-location'),route:v('wf-route'),power:v('wf-power'),notes:v('wf-notes'),updatedAt:new Date().toISOString().slice(0,10)};
+  await fetch(`/api/wiring/${encodeURIComponent(wireTarget)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!DATA.wiring)DATA.wiring={};
+  DATA.wiring[wireTarget]=body;
+  closeModal('wire-modal'); updateHeader(); filterModels(); renderControllers();
+}
+async function deleteWiring(){
+  if(!wireTarget)return;
+  await fetch(`/api/wiring/${encodeURIComponent(wireTarget)}`,{method:'DELETE'});
+  if(DATA.wiring)delete DATA.wiring[wireTarget];
+  closeModal('wire-modal'); updateHeader(); filterModels(); renderControllers();
+}
+
+// ─── Controllers ──────────────────────────────────────────────────────────────
+function renderControllers(){
+  const cls=c=>{if(c.name.includes('16SPE'))return 'h16';if(c.name.includes('LR'))return 'hlr';if(c.name==='FPPBB')return 'fbb';return 'fpp';};
+  document.getElementById('ctrl-content').innerHTML=DATA.controllers.map(ctrl=>{
+    const models=DATA.models.filter(m=>m.controller===ctrl.name).sort((a,b)=>(a.port||999)-(b.port||999));
+    const ports=models.length?models.map(m=>{
+      const w=DATA.wiring[m.name];
+      const chStr=m.ctrlRelCh!=null?`Ch ${fmtCh(m.ctrlRelCh)} – ${fmtCh(m.ctrlEndCh)}`:'';
+      const wireStr=w?`<span style="color:var(--green)">${w.color||'wired'}${w.location?' · '+w.location:''}</span>`:`<span style="color:#444">no wiring</span>`;
+      return `<div class="port-row" onclick="openWire(event,'${esc(m.name)}')">
+        <span class="pnum">Port ${m.port||'–'}</span><span class="pmodel">${m.name}</span>
+        <span class="pch">${chStr}</span><span class="pnodes">${fmtCh(m.nodes)} nodes</span>
+        <span class="pwire">${wireStr}</span>
+      </div>`;
+    }).join(''):`<div class="ctrl-empty">No direct model assignments</div>`;
+    return `<div class="ctrl-card ${cls(ctrl)}">
+      <div class="ctrl-head">
+        <div><h3>${ctrl.name}</h3><div style="font-size:11px;color:var(--text2)">${ctrl.vendor} ${ctrl.model}${ctrl.description?' · '+ctrl.description:''}</div></div>
+        <div class="ip"><a href="http://${ctrl.ip}" target="_blank">${ctrl.ip}</a></div>
+      </div>
+      <div class="ctrl-meta">
+        <div class="cm"><div class="cl">Protocol</div><div class="cv">${ctrl.protocol}</div></div>
+        ${ctrl.maxChannels?`<div class="cm"><div class="cl">Max Ch</div><div class="cv">${ctrl.maxChannels.toLocaleString()}</div></div>`:''}
+        <div class="cm"><div class="cl">State</div><div class="cv" style="color:${ctrl.state==='Active'?'var(--green)':'var(--gold)'}">${ctrl.state}</div></div>
+        <div class="cm"><div class="cl">Models</div><div class="cv">${models.length}</div></div>
+      </div>
+      <div class="ctrl-ports">${ports}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Groups ───────────────────────────────────────────────────────────────────
+function renderGroups(){
+  document.getElementById('grp-content').innerHTML=DATA.groups.map(g=>`
+    <div class="grp-card">
+      <div class="grp-head"><h3>${g.name}</h3><span class="cnt">${g.members.length}</span></div>
+      ${g.aliases?.length?`<div class="grp-alias">${g.aliases.join(', ')}</div>`:''}
+      <div class="grp-members">${g.members.map(m=>`<div class="grp-member">${m}</div>`).join('')}</div>
+    </div>`).join('');
+}
+
+// ─── Overview ─────────────────────────────────────────────────────────────────
+function renderOverview(){
+  const wired=Object.keys(DATA.wiring||{}).length;
+  document.getElementById('ov-ctrl-cards').innerHTML=DATA.controllers.map(ctrl=>{
+    const models=DATA.models.filter(m=>m.controller===ctrl.name);
+    const usedCh=models.reduce((s,m)=>s+(m.channels||0),0);
+    return `<div class="ov-card">
+      <h3>${ctrl.name}</h3><div class="big">${ctrl.ip||'No IP'}</div>
+      <div class="det">Protocol: ${ctrl.protocol}<br>Max Ch: ${ctrl.maxChannels?.toLocaleString()||'N/A'}<br>
+      Connected models: ${models.length}<br>Channels used: ${usedCh.toLocaleString()} / ${ctrl.maxChannels?.toLocaleString()||'?'}</div>
+    </div>`;
+  }).join('')+`<div class="ov-card">
+    <h3>Wiring Documentation</h3><div class="big">${wired} / ${DATA.models.length}</div>
+    <div class="det">Models with wiring recorded.<br>Click any model row → Add Wiring Info<br>or click a port row in Controllers.</div>
+  </div>`;
+}
+
+boot();
+</script>
+</body>
+</html>

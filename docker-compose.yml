@@ -1,0 +1,14 @@
+services:
+  xlights-reference:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3030:3000"
+    volumes:
+      - xlights-data:/data
+    environment:
+      - NODE_ENV=production
+      - DATA_DIR=/data
+
+volumes:
+  xlights-data:
