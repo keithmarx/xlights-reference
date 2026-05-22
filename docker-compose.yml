@@ -6,6 +6,7 @@ services:
       - "127.0.0.1:3030:3000"
     volumes:
       - xlights-data:/data
+      - /opt/xlights-reference/public:/app/public
     environment:
       - NODE_ENV=production
       - DATA_DIR=/data
