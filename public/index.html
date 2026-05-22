@@ -248,6 +248,7 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
       <div class="user-badge">Signed in as <span id="current-user"></span></div>
       <button class="hbtn" onclick="showImport()">↑ Import XML</button>
       <button class="hbtn" id="users-btn" onclick="openUsersModal()" style="display:none">👥 Users</button>
+      <button class="hbtn" onclick="openHelp()">? Help</button>
       <button class="hbtn red" onclick="doLogout()">Sign Out</button>
     </div>
   </header>
@@ -349,15 +350,15 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
     <div class="form-row">
       <label>Long Range Receiver</label>
       <div style="display:flex;gap:8px">
-        <div style="flex:1"><label style="font-size:10px;color:var(--text2);text-transform:none">Unit # (1–8)</label><input id="wf-lr-unit" type="number" min="1" max="8" placeholder="–"></div>
-        <div style="flex:1"><label style="font-size:10px;color:var(--text2);text-transform:none">Port (1–8)</label><input id="wf-lr-port" type="number" min="1" max="8" placeholder="–"></div>
+        <div style="flex:1"><label style="font-size:10px;color:var(--text2);text-transform:none">Unit #</label><input id="wf-lr-unit" type="number" min="1" placeholder="–"></div>
+        <div style="flex:1"><label style="font-size:10px;color:var(--text2);text-transform:none">Port</label><input id="wf-lr-port" type="number" min="1" placeholder="–"></div>
       </div>
     </div>
     <div class="form-row">
       <label>Repeater</label>
       <div style="display:flex;gap:8px">
-        <div style="flex:1"><label style="font-size:10px;color:var(--text2);text-transform:none">Unit # (1–8)</label><input id="wf-rep-unit" type="number" min="1" max="8" placeholder="–"></div>
-        <div style="flex:1"><label style="font-size:10px;color:var(--text2);text-transform:none">Port (1–32)</label><input id="wf-rep-port" type="number" min="1" max="32" placeholder="–"></div>
+        <div style="flex:1"><label style="font-size:10px;color:var(--text2);text-transform:none">Unit #</label><input id="wf-rep-unit" type="number" min="1" placeholder="–"></div>
+        <div style="flex:1"><label style="font-size:10px;color:var(--text2);text-transform:none">Port</label><input id="wf-rep-port" type="number" min="1" placeholder="–"></div>
       </div>
     </div>
     <div class="form-row"><label>Notes</label><textarea id="wf-notes" placeholder="Troubleshooting tips, known issues…"></textarea></div>
@@ -386,6 +387,88 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
         <button class="btn-cancel" onclick="closeModal('users-modal')">Close</button>
       </div>
       <div class="modal-err" id="users-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Help modal ── -->
+<div class="modal-bg" id="help-modal">
+  <div class="modal" style="width:680px;max-width:95vw;">
+    <h2>? xLights Show Reference — User Guide</h2>
+    <div style="font-size:12px;line-height:1.8;color:var(--text);">
+
+      <div style="margin-bottom:16px">
+        <div style="color:var(--gold);font-size:13px;font-weight:bold;margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px;">Getting Started</div>
+        <p style="color:var(--text2)">This app is your xLights show technical reference — a fast lookup tool for channel numbers, controller ports, wire assignments, and physical locations. Your data is private to your account; each user sees only their own imported show data and wiring notes.</p>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div style="color:var(--gold);font-size:13px;font-weight:bold;margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px;">Importing Your xLights Config</div>
+        <p style="color:var(--text2);margin-bottom:6px">Click <strong style="color:var(--text)">↑ Import XML</strong> in the header. You'll need two files from your xLights show folder:</p>
+        <ul style="list-style:none;color:var(--text2);margin-left:8px">
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">xlights_networks.xml</strong> — controller definitions (IPs, protocols, channel counts)</li>
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">xlights_rgbeffects.xml</strong> — model layout (props, nodes, ports, groups)</li>
+        </ul>
+        <p style="color:var(--text2);margin-top:6px">You can upload either file independently to refresh just that section. <strong style="color:var(--green)">Wiring notes are always preserved</strong> across re-imports.</p>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div style="color:var(--gold);font-size:13px;font-weight:bold;margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px;">Models Tab</div>
+        <p style="color:var(--text2);margin-bottom:6px">Every prop/model in your show. Columns:</p>
+        <ul style="list-style:none;color:var(--text2);margin-left:8px">
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">Start / End Ch</strong> — absolute universe channel, or controller-relative channel if model uses relative addressing</li>
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">Nodes</strong> — pixel count for the model</li>
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">Controller / Port / Protocol</strong> — which output port and pixel protocol (ws2811, etc.)</li>
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">Wiring</strong> — green badge means wiring info recorded; grey means not yet documented</li>
+        </ul>
+        <p style="color:var(--text2);margin-top:6px"><strong style="color:var(--text)">Click any row</strong> to expand sub-models, aliases, groups, and wiring detail. <strong style="color:var(--text)">Click any column header</strong> to sort. Use the search box to filter by name, channel, controller, group, type, or wiring info. Use the controller filter buttons to narrow to a single controller.</p>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div style="color:var(--gold);font-size:13px;font-weight:bold;margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px;">Controllers Tab</div>
+        <p style="color:var(--text2)">One card per controller. Shows IP address (clickable link to the controller web UI), protocol, max channels, and a port-by-port list of every model assigned to it. Wiring summary is shown inline per port. Click any port row to open the wiring modal for that model.</p>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div style="color:var(--gold);font-size:13px;font-weight:bold;margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px;">Groups Tab</div>
+        <p style="color:var(--text2)">All xLights model groups imported from your rgbeffects file. Each card shows group name, member count, aliases, and the list of models in that group.</p>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div style="color:var(--gold);font-size:13px;font-weight:bold;margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px;">Wiring Documentation</div>
+        <p style="color:var(--text2);margin-bottom:6px">Click any model row → <strong style="color:var(--text)">Add / Edit Wiring Info</strong>, or click the wiring badge, or click a port row in the Controllers tab. Fields:</p>
+        <ul style="list-style:none;color:var(--text2);margin-left:8px">
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">Wire Color</strong> — wire color and gauge (e.g. Red 18AWG)</li>
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">Connector Type</strong> — connector style at the prop end (e.g. 3-pin JST, waterproof)</li>
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">Physical Location</strong> — where in the yard/house this prop lives</li>
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">Wire Route / Run</strong> — how the cable runs from controller to prop</li>
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">Power Injection</strong> — PSU details and injection points</li>
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">Long Range Receiver</strong> — unit number and port number if signal travels through an LR receiver board</li>
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">Repeater</strong> — unit number and port number if signal passes through a repeater board</li>
+          <li style="padding:2px 0">→ <strong style="color:var(--text)">Notes</strong> — troubleshooting tips, known issues, anything else</li>
+        </ul>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div style="color:var(--gold);font-size:13px;font-weight:bold;margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px;">User Management <span style="color:var(--text2);font-weight:normal;font-size:11px">(Admin only)</span></div>
+        <p style="color:var(--text2)">Admins see a <strong style="color:var(--text)">👥 Users</strong> button in the header. From there you can add new users (assign User or Admin role), remove users, and manage accounts. Each user has their own independent show data — importing XML or saving wiring notes never affects another user's data.</p>
+      </div>
+
+      <div style="margin-bottom:4px">
+        <div style="color:var(--gold);font-size:13px;font-weight:bold;margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px;">Quick Troubleshooting Tips</div>
+        <ul style="list-style:none;color:var(--text2);margin-left:8px">
+          <li style="padding:2px 0">→ Know the channel number? → Models tab, sort by Start Channel</li>
+          <li style="padding:2px 0">→ Prop not lighting up? → Controllers tab → find the port → check wiring notes</li>
+          <li style="padding:2px 0">→ Wrong colors? → Check Protocol column — confirm ws2811 vs ws2812 etc.</li>
+          <li style="padding:2px 0">→ Signal dying mid-run? → Check Long Range Receiver and Repeater fields in wiring notes</li>
+          <li style="padding:2px 0">→ Need to find a group of props? → Groups tab, or search the model name in Models tab</li>
+          <li style="padding:2px 0">→ Re-imported XML and lost data? → You won't — wiring notes are always preserved on import</li>
+        </ul>
+      </div>
+
+    </div>
+    <div class="modal-btns" style="margin-top:20px">
+      <button class="btn-cancel" onclick="closeModal('help-modal')">Close</button>
     </div>
   </div>
 </div>
@@ -487,6 +570,7 @@ const v = id => document.getElementById(id)?.value?.trim()||'';
 function setErr(id,msg){ const el=document.getElementById(id); if(el) el.textContent=msg; }
 async function post(url,body){ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return r.json(); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function openHelp(){ document.getElementById('help-modal').classList.add('open'); }
 document.querySelectorAll('.modal-bg').forEach(el=>el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); }));
 
 function ctrlClass(c){ if(c.includes('16SPE'))return 'c-h16'; if(c.includes('LR'))return 'c-hlr'; if(c==='FPPBB')return 'c-fbb'; return 'c-none'; }
