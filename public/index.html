@@ -346,6 +346,20 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
     <div class="form-row"><label>Physical Location</label><input id="wf-location" placeholder="e.g. Yard East, Roofline West, Front porch"></div>
     <div class="form-row"><label>Wire Route / Run</label><textarea id="wf-route" placeholder="Describe how the wire runs from the controller to the prop…"></textarea></div>
     <div class="form-row"><label>Power Injection</label><input id="wf-power" placeholder="e.g. 12V PSU, injected at midpoint"></div>
+    <div class="form-row">
+      <label>Long Range Receiver</label>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1"><label style="font-size:10px;color:var(--text2);text-transform:none">Unit # (1–8)</label><input id="wf-lr-unit" type="number" min="1" max="8" placeholder="–"></div>
+        <div style="flex:1"><label style="font-size:10px;color:var(--text2);text-transform:none">Port (1–8)</label><input id="wf-lr-port" type="number" min="1" max="8" placeholder="–"></div>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Repeater</label>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1"><label style="font-size:10px;color:var(--text2);text-transform:none">Unit # (1–8)</label><input id="wf-rep-unit" type="number" min="1" max="8" placeholder="–"></div>
+        <div style="flex:1"><label style="font-size:10px;color:var(--text2);text-transform:none">Port (1–32)</label><input id="wf-rep-port" type="number" min="1" max="32" placeholder="–"></div>
+      </div>
+    </div>
     <div class="form-row"><label>Notes</label><textarea id="wf-notes" placeholder="Troubleshooting tips, known issues…"></textarea></div>
     <div class="modal-btns">
       <button class="btn-del" id="wire-del-btn" onclick="deleteWiring()">Delete</button>
@@ -592,6 +606,8 @@ function filterModels(){
         ${w.location?`<span class="wf">Location:</span><span class="wv">${w.location}</span><br>`:''}
         ${w.route?`<span class="wf">Route:</span><span class="wv">${w.route}</span><br>`:''}
         ${w.power?`<span class="wf">Power:</span><span class="wv">${w.power}</span><br>`:''}
+        ${w.lrUnit?`<span class="wf">LR:</span><span class="wv">Unit ${w.lrUnit}${w.lrPort?' Port '+w.lrPort:''}</span>&nbsp;&nbsp;`:''}
+        ${w.repUnit?`<span class="wf">Repeater:</span><span class="wv">Unit ${w.repUnit}${w.repPort?' Port '+w.repPort:''}</span>&nbsp;&nbsp;`:''}
         ${w.notes?`<span class="wf">Notes:</span><span class="wv">${w.notes}</span>`:''}
       </div>`:'';
       const subHtml=m.subModels?.length?`<div class="dsec"><h4>Sub-Models</h4><div class="pills">${m.subModels.map(s=>`<span class="pill-sub">${s}</span>`).join('')}</div></div>`:'';
@@ -636,12 +652,22 @@ function openWire(e,name){
   document.getElementById('wire-model-name').textContent=name;
   const w=DATA.wiring[name]||{};
   ['color','connector','location','route','power','notes'].forEach(f=>{ document.getElementById('wf-'+f).value=w[f]||''; });
+  document.getElementById('wf-lr-unit').value  = w.lrUnit  || '';
+  document.getElementById('wf-lr-port').value  = w.lrPort  || '';
+  document.getElementById('wf-rep-unit').value = w.repUnit || '';
+  document.getElementById('wf-rep-port').value = w.repPort || '';
   document.getElementById('wire-del-btn').style.display=Object.keys(w).length?'':'none';
   document.getElementById('wire-modal').classList.add('open');
 }
 async function saveWiring(){
   if(!wireTarget)return;
-  const body={color:v('wf-color'),connector:v('wf-connector'),location:v('wf-location'),route:v('wf-route'),power:v('wf-power'),notes:v('wf-notes'),updatedAt:new Date().toISOString().slice(0,10)};
+  const body={
+    color:v('wf-color'), connector:v('wf-connector'), location:v('wf-location'),
+    route:v('wf-route'), power:v('wf-power'),
+    lrUnit:v('wf-lr-unit'), lrPort:v('wf-lr-port'),
+    repUnit:v('wf-rep-unit'), repPort:v('wf-rep-port'),
+    notes:v('wf-notes'), updatedAt:new Date().toISOString().slice(0,10)
+  };
   await fetch(`/api/wiring/${encodeURIComponent(wireTarget)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(!DATA.wiring)DATA.wiring={};
   DATA.wiring[wireTarget]=body;

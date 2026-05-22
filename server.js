@@ -9,7 +9,6 @@ const path = require('path');
 const app       = express();
 const PORT      = process.env.PORT     || 3000;
 const DATA_DIR  = process.env.DATA_DIR || '/data';
-const DATA_FILE  = path.join(DATA_DIR, 'show-data.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const SESSION_SECRET = process.env.SESSION_SECRET || 'xlights-change-this-secret';
 
@@ -27,14 +26,18 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 // ── Persistence ───────────────────────────────────────────────────────────────
-function loadData() {
-  if (fs.existsSync(DATA_FILE)) {
-    try { return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); } catch {}
+function dataFile(username) {
+  return path.join(DATA_DIR, `show-data-${username}.json`);
+}
+function loadData(username) {
+  const file = dataFile(username);
+  if (fs.existsSync(file)) {
+    try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch {}
   }
   return { show: {}, controllers: [], models: [], groups: [], wiring: {} };
 }
-function saveData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+function saveData(data, username) {
+  fs.writeFileSync(dataFile(username), JSON.stringify(data, null, 2), 'utf8');
 }
 function loadUsers() {
   if (fs.existsSync(USERS_FILE)) {
@@ -213,37 +216,41 @@ function parseRgbEffects(xml) {
 }
 
 // ── Protected API routes ──────────────────────────────────────────────────────
-app.get('/api/data', requireAuth, (_req, res) => res.json(loadData()));
+app.get('/api/data', requireAuth, (req, res) => res.json(loadData(req.session.user.username)));
 
 app.post('/api/import', requireAuth, upload.fields([
   { name:'networks', maxCount:1 }, { name:'rgbeffects', maxCount:1 }
 ]), (req, res) => {
   try {
-    const current = loadData();
+    const u = req.session.user.username;
+    const current = loadData(u);
     if (req.files?.networks)   current.controllers = parseNetworks(req.files.networks[0].buffer.toString('utf8'));
     if (req.files?.rgbeffects) {
       const { models, groups } = parseRgbEffects(req.files.rgbeffects[0].buffer.toString('utf8'));
       current.models = models; current.groups = groups;
     }
     if (!current.wiring) current.wiring = {};
-    saveData(current);
+    saveData(current, u);
     res.json({ success:true, data:current });
   } catch(e) { console.error(e); res.status(500).json({ error:e.message }); }
 });
 
-app.get('/api/wiring',                requireAuth, (_req,res) => res.json(loadData().wiring||{}));
+app.get('/api/wiring',                requireAuth, (req,res) => res.json(loadData(req.session.user.username).wiring||{}));
 app.put('/api/wiring/:modelName',     requireAuth, (req,res) => {
-  const data = loadData(); if (!data.wiring) data.wiring={};
+  const u = req.session.user.username;
+  const data = loadData(u); if (!data.wiring) data.wiring={};
   data.wiring[decodeURIComponent(req.params.modelName)] = req.body;
-  saveData(data); res.json({ success:true });
+  saveData(data, u); res.json({ success:true });
 });
 app.delete('/api/wiring/:modelName',  requireAuth, (req,res) => {
-  const data = loadData(); if (data.wiring) delete data.wiring[decodeURIComponent(req.params.modelName)];
-  saveData(data); res.json({ success:true });
+  const u = req.session.user.username;
+  const data = loadData(u); if (data.wiring) delete data.wiring[decodeURIComponent(req.params.modelName)];
+  saveData(data, u); res.json({ success:true });
 });
 app.put('/api/show', requireAuth, (req,res) => {
-  const data = loadData(); data.show = { ...data.show, ...req.body };
-  saveData(data); res.json({ success:true });
+  const u = req.session.user.username;
+  const data = loadData(u); data.show = { ...data.show, ...req.body };
+  saveData(data, u); res.json({ success:true });
 });
 
 app.listen(PORT, () => console.log(`xLights Reference running on :${PORT}`));
