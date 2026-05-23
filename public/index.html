@@ -204,6 +204,23 @@ tr.exp td{background:#111;}
 
 mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
 .no-results{padding:40px;text-align:center;color:var(--text2);}
+
+/* ── LR Boards modal ── */
+.lr-modal{width:740px;}
+.lr-board{border:1px solid var(--border);border-radius:6px;margin-bottom:12px;overflow:hidden;}
+.lr-board-head{background:var(--bg3);padding:8px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.lr-board-head .lr-unit-label{color:var(--gold);font-weight:bold;font-size:12px;min-width:52px;}
+.lr-board-head input{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-family:inherit;font-size:12px;flex:1;}
+.lr-board-head input:focus{outline:none;border-color:var(--gold);}
+.lr-channels{padding:10px 12px;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+.lr-ch{display:flex;align-items:center;gap:5px;}
+.lr-ch-num{color:var(--gold);font-size:10px;font-weight:bold;min-width:30px;text-align:right;}
+.lr-ch input{flex:1;background:var(--bg);border:1px solid #222;color:var(--text);padding:3px 6px;border-radius:3px;font-size:11px;font-family:inherit;}
+.lr-ch input:focus{outline:none;border-color:var(--gold);}
+.lr-ch input.has-model{border-color:#2a5a2a;color:var(--green);}
+.lr-ch-hint{font-size:10px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;}
+.lr-badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;background:#0a0a1a;border:1px solid #2a2a5a;color:#8888cc;margin-left:6px;cursor:pointer;}
+.lr-badge:hover{border-color:var(--blue);color:var(--blue);}
 </style>
 </head>
 <body>
@@ -391,6 +408,20 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
   </div>
 </div>
 
+<!-- ── LR Boards modal ── -->
+<div class="modal-bg" id="lr-modal">
+  <div class="modal lr-modal">
+    <h2>📡 LR Boards — <span id="lr-modal-ctrl"></span></h2>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Document the long range receiver boards connected to this controller. Each board has up to 32 channels. Channels already assigned via wiring notes are highlighted.</p>
+    <div id="lr-boards-list"></div>
+    <button class="hbtn" onclick="addLrBoard()" style="margin-top:4px;font-size:12px">+ Add LR Board</button>
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="btn-cancel" onclick="closeModal('lr-modal')">Cancel</button>
+      <button class="btn-save" onclick="saveLrBoards()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Help modal ── -->
 <div class="modal-bg" id="help-modal">
   <div class="modal" style="width:680px;max-width:95vw;">
@@ -475,7 +506,7 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
 
 <script>
 // ─── State ──────────────────────────────────────────────────────────────────
-let DATA = { controllers:[], models:[], groups:[], wiring:{} };
+let DATA = { controllers:[], models:[], groups:[], wiring:{}, lrBoards:{} };
 let ME   = null;
 let sortCol='startCh', sortDir=1, activeCtrl='all', expanded=new Set(), wireTarget=null;
 
@@ -764,6 +795,90 @@ async function deleteWiring(){
   closeModal('wire-modal'); updateHeader(); filterModels(); renderControllers();
 }
 
+// ─── LR Boards ───────────────────────────────────────────────────────────────
+let lrBoardsTarget = null;
+let lrBoardsData   = [];
+
+function lrModelHints() {
+  // Build map: { "unit:port" -> modelName } from wiring data
+  const hints = {};
+  Object.entries(DATA.wiring || {}).forEach(([name, w]) => {
+    if (w.lrUnit && w.lrPort) hints[`${w.lrUnit}:${w.lrPort}`] = name;
+  });
+  return hints;
+}
+
+function openLrBoards(e, ctrlName) {
+  e.stopPropagation();
+  lrBoardsTarget = ctrlName;
+  document.getElementById('lr-modal-ctrl').textContent = ctrlName;
+  const stored = (DATA.lrBoards || {})[ctrlName] || [];
+  lrBoardsData = stored.map(b => ({
+    unit: b.unit,
+    label: b.label || '',
+    channels: Array.from({length:32}, (_,i) => b.channels?.[i] || '')
+  }));
+  renderLrModal();
+  document.getElementById('lr-modal').classList.add('open');
+}
+
+function renderLrModal() {
+  const list  = document.getElementById('lr-boards-list');
+  const hints = lrModelHints();
+  if (!lrBoardsData.length) {
+    list.innerHTML = '<div style="color:var(--text2);font-size:12px;padding:8px 0;text-align:center">No LR boards configured yet.</div>';
+    return;
+  }
+  list.innerHTML = lrBoardsData.map((board, bi) => `
+    <div class="lr-board">
+      <div class="lr-board-head">
+        <span class="lr-unit-label">Unit ${board.unit}</span>
+        <input placeholder="Board label (e.g. Front Yard LR)" value="${esc(board.label)}"
+          oninput="lrBoardsData[${bi}].label=this.value">
+        <button class="btn-del" style="padding:3px 10px;margin:0;font-size:11px"
+          onclick="removeLrBoard(${bi})">Remove</button>
+      </div>
+      <div class="lr-channels">
+        ${Array.from({length:32}, (_,i) => {
+          const hint  = hints[`${board.unit}:${i+1}`] || '';
+          const val   = esc(board.channels[i] || '');
+          const hasMod = !!hint;
+          return `<div class="lr-ch">
+            <span class="lr-ch-num">${i+1}</span>
+            <input value="${val}" placeholder="${hint ? esc(hint) : '—'}"
+              class="${hasMod && !board.channels[i] ? 'has-model' : ''}"
+              oninput="lrBoardsData[${bi}].channels[${i}]=this.value"
+              title="${hint ? 'Wiring: '+esc(hint) : ''}">
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function addLrBoard() {
+  const nextUnit = lrBoardsData.length ? Math.max(...lrBoardsData.map(b => b.unit)) + 1 : 1;
+  lrBoardsData.push({ unit: nextUnit, label: '', channels: Array(32).fill('') });
+  renderLrModal();
+}
+
+function removeLrBoard(idx) {
+  lrBoardsData.splice(idx, 1);
+  renderLrModal();
+}
+
+async function saveLrBoards() {
+  if (!lrBoardsTarget) return;
+  await fetch(`/api/lrboards/${encodeURIComponent(lrBoardsTarget)}`, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(lrBoardsData)
+  });
+  if (!DATA.lrBoards) DATA.lrBoards = {};
+  DATA.lrBoards[lrBoardsTarget] = lrBoardsData;
+  closeModal('lr-modal');
+  renderControllers();
+}
+
 // ─── Controllers ──────────────────────────────────────────────────────────────
 function renderControllers(){
   const cls=c=>{if(c.name.includes('16SPE'))return 'h16';if(c.name.includes('LR'))return 'hlr';if(c.name==='FPPBB')return 'fbb';return 'fpp';};
@@ -779,10 +894,21 @@ function renderControllers(){
         <span class="pwire">${wireStr}</span>
       </div>`;
     }).join(''):`<div class="ctrl-empty">No direct model assignments</div>`;
+    const lrBoards = (DATA.lrBoards || {})[ctrl.name] || [];
+    const lrBtnLabel = lrBoards.length
+      ? `📡 LR Boards <span class="lr-badge">${lrBoards.length}</span>`
+      : `📡 LR Boards`;
+    const lrSummary = lrBoards.length ? `
+      <div style="padding:6px 14px;background:#08080f;border-top:1px solid #1a1a2a;font-size:11px;display:flex;flex-wrap:wrap;gap:10px">
+        ${lrBoards.map(b=>`<span style="color:#8888cc">Unit ${b.unit}${b.label?' — '+b.label:''} <span style="color:#555">(${b.channels.filter(c=>c).length}/32 ch labeled)</span></span>`).join('')}
+      </div>` : '';
     return `<div class="ctrl-card ${cls(ctrl)}">
       <div class="ctrl-head">
         <div><h3>${ctrl.name}</h3><div style="font-size:11px;color:var(--text2)">${ctrl.vendor} ${ctrl.model}${ctrl.description?' · '+ctrl.description:''}</div></div>
-        <div class="ip"><a href="http://${ctrl.ip}" target="_blank">${ctrl.ip}</a></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+          <button class="hbtn" style="font-size:11px;padding:4px 10px" onclick="openLrBoards(event,'${esc(ctrl.name)}')">${lrBtnLabel}</button>
+          <div class="ip"><a href="http://${ctrl.ip}" target="_blank">${ctrl.ip}</a></div>
+        </div>
       </div>
       <div class="ctrl-meta">
         <div class="cm"><div class="cl">Protocol</div><div class="cv">${ctrl.protocol}</div></div>
@@ -790,6 +916,7 @@ function renderControllers(){
         <div class="cm"><div class="cl">State</div><div class="cv" style="color:${ctrl.state==='Active'?'var(--green)':'var(--gold)'}">${ctrl.state}</div></div>
         <div class="cm"><div class="cl">Models</div><div class="cv">${models.length}</div></div>
       </div>
+      ${lrSummary}
       <div class="ctrl-ports">${ports}</div>
     </div>`;
   }).join('');

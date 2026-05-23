@@ -34,7 +34,7 @@ function loadData(username) {
   if (fs.existsSync(file)) {
     try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch {}
   }
-  return { show: {}, controllers: [], models: [], groups: [], wiring: {} };
+  return { show: {}, controllers: [], models: [], groups: [], wiring: {}, lrBoards: {} };
 }
 function saveData(data, username) {
   fs.writeFileSync(dataFile(username), JSON.stringify(data, null, 2), 'utf8');
@@ -251,6 +251,19 @@ app.put('/api/show', requireAuth, (req,res) => {
   const u = req.session.user.username;
   const data = loadData(u); data.show = { ...data.show, ...req.body };
   saveData(data, u); res.json({ success:true });
+});
+
+app.get('/api/lrboards/:ctrl', requireAuth, (req, res) => {
+  const data = loadData(req.session.user.username);
+  res.json((data.lrBoards || {})[decodeURIComponent(req.params.ctrl)] || []);
+});
+app.put('/api/lrboards/:ctrl', requireAuth, (req, res) => {
+  const u = req.session.user.username;
+  const data = loadData(u);
+  if (!data.lrBoards) data.lrBoards = {};
+  data.lrBoards[decodeURIComponent(req.params.ctrl)] = req.body;
+  saveData(data, u);
+  res.json({ success: true });
 });
 
 app.listen(PORT, () => console.log(`xLights Reference running on :${PORT}`));
