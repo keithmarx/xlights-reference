@@ -221,6 +221,55 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
 .lr-ch-hint{font-size:10px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;}
 .lr-badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;background:#0a0a1a;border:1px solid #2a2a5a;color:#8888cc;margin-left:6px;cursor:pointer;}
 .lr-badge:hover{border-color:var(--blue);color:var(--blue);}
+
+/* ── Print dialog ── */
+.print-modal{width:560px;max-width:95vw;}
+.pr-group{margin-bottom:14px;}
+.pr-group h3{font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:3px;}
+.pr-opt{display:flex;align-items:flex-start;gap:8px;padding:3px 0;font-size:12px;color:var(--text);cursor:pointer;}
+.pr-opt input{margin-top:2px;accent-color:var(--green);}
+.pr-opt small{display:block;color:var(--text2);font-size:11px;}
+.pr-ctrls{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;}
+.pr-row{display:flex;gap:10px;align-items:center;font-size:12px;}
+.pr-row select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-family:inherit;font-size:12px;}
+
+/* ── Print output (hidden on screen) ── */
+#print-root{display:none;}
+@media print{
+  html,body{height:auto !important;overflow:visible !important;background:#fff !important;color:#000 !important;display:block !important;}
+  body > *:not(#print-root){display:none !important;}
+  #print-root{display:block !important;font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#000;background:#fff;}
+  #print-root *{color:#000;background:transparent;border-color:#666;}
+  #print-root a{text-decoration:none;}
+  .pp-section{page-break-before:always;break-before:page;}
+  .pp-section:first-child{page-break-before:auto;break-before:auto;}
+  .pp-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:8px;}
+  .pp-head h1{font-size:16pt;}
+  .pp-head .pp-sub{font-size:9pt;text-align:right;}
+  .pp-meta{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:9pt;margin-bottom:8px;}
+  .pp-meta b{font-weight:bold;}
+  table.pp{width:100%;border-collapse:collapse;margin-bottom:10px;}
+  table.pp th{background:#e8e8e8 !important;text-align:left;font-size:8.5pt;text-transform:uppercase;border:1px solid #666;padding:3px 5px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  table.pp td{border:1px solid #888;padding:4px 5px;vertical-align:top;font-size:9.5pt;}
+  table.pp tr{page-break-inside:avoid;break-inside:avoid;}
+  table.pp thead{display:table-header-group;}
+  .pp-chk{width:22px;text-align:center;font-size:13pt;line-height:1;}
+  .pp-port{font-weight:bold;font-size:11pt;white-space:nowrap;}
+  .pp-name{font-weight:bold;}
+  .pp-small{font-size:8.5pt;}
+  .pp-blank{display:inline-block;min-width:60px;border-bottom:1px solid #666;height:11px;}
+  .pp-loc{font-size:12pt;font-weight:bold;background:#e8e8e8 !important;border:1px solid #666;padding:4px 6px;margin:10px 0 4px;page-break-after:avoid;break-after:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .pp-lr{margin-bottom:12px;page-break-inside:avoid;break-inside:avoid;}
+  .pp-lr h3{font-size:11pt;margin-bottom:3px;}
+  .pp-lr-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(8,auto);grid-auto-flow:column;gap:0;border:1px solid #666;}
+  .pp-box{display:inline-block;width:13px;height:13px;border:1.5px solid #000;vertical-align:middle;}
+  .pp-lr-cell{border:1px solid #aaa;padding:4px 5px;font-size:9pt;min-height:30px;}
+  .pp-lr-cell b{display:inline-block;min-width:22px;}
+  .pp-grp{break-inside:avoid;page-break-inside:avoid;margin-bottom:8px;}
+  .pp-grp h3{font-size:10.5pt;}
+  .pp-grp div{font-size:9pt;}
+  .pp-foot{font-size:8pt;margin-top:6px;border-top:1px solid #999;padding-top:3px;}
+}
 </style>
 </head>
 <body>
@@ -264,6 +313,7 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
     <div class="header-btns">
       <div class="user-badge">Signed in as <span id="current-user"></span></div>
       <button class="hbtn" onclick="showImport()">↑ Import XML</button>
+      <button class="hbtn" onclick="openPrint()">🖨 Print</button>
       <button class="hbtn" id="users-btn" onclick="openUsersModal()" style="display:none">👥 Users</button>
       <button class="hbtn" onclick="openHelp()">? Help</button>
       <button class="hbtn red" onclick="doLogout()">Sign Out</button>
@@ -422,6 +472,37 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
   </div>
 </div>
 
+<!-- ── Print modal ── -->
+<div class="modal-bg" id="print-modal">
+  <div class="modal print-modal">
+    <h2>🖨 Print Install Sheets</h2>
+    <div class="pr-group">
+      <h3>Sheets to include</h3>
+      <label class="pr-opt"><input type="checkbox" id="pr-ports" checked><span>Controller port sheets<small>One page set per controller: every port, the prop on it, channels, wire color, connector, route, power, LR/repeater, notes.</small></span></label>
+      <label class="pr-opt"><input type="checkbox" id="pr-props" checked><span>Prop checklist by location<small>Props grouped by Physical Location so you can work through the yard area by area.</small></span></label>
+      <label class="pr-opt"><input type="checkbox" id="pr-lr" checked><span>LR board channel maps<small>Labeled 32-channel grid for each long range receiver unit.</small></span></label>
+      <label class="pr-opt"><input type="checkbox" id="pr-groups"><span>Model groups</span></label>
+    </div>
+    <div class="pr-group">
+      <h3>Controllers</h3>
+      <div class="pr-ctrls" id="pr-ctrl-list"></div>
+    </div>
+    <div class="pr-group">
+      <h3>Options</h3>
+      <label class="pr-opt"><input type="checkbox" id="pr-checks" checked><span>Checkbox columns (Installed / Tested)</span></label>
+      <label class="pr-opt"><input type="checkbox" id="pr-sub"><span>List sub-models</span></label>
+      <label class="pr-opt"><input type="checkbox" id="pr-blanks" checked><span>Write-in blanks for props with no wiring documented<small>Leaves room to pencil in what you find, then enter it later.</small></span></label>
+      <div class="pr-row" style="margin-top:6px"><span>Orientation</span>
+        <select id="pr-orient"><option value="landscape">Landscape (recommended)</option><option value="portrait">Portrait</option></select>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('print-modal')">Cancel</button>
+      <button class="btn-save" onclick="doPrint()">Print / Save as PDF</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Help modal ── -->
 <div class="modal-bg" id="help-modal">
   <div class="modal" style="width:680px;max-width:95vw;">
@@ -503,6 +584,8 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
     </div>
   </div>
 </div>
+
+<div id="print-root"></div>
 
 <script>
 // ─── State ──────────────────────────────────────────────────────────────────
@@ -948,6 +1031,140 @@ function renderOverview(){
     <div class="det">Models with wiring recorded.<br>Click any model row → Add Wiring Info<br>or click a port row in Controllers.</div>
   </div>`;
 }
+
+// ─── Print ───────────────────────────────────────────────────────────────────
+function pe(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function pml(s){ return pe(s).replace(/\n/g,'<br>'); }
+
+function openPrint(){
+  const names=[...new Set([...DATA.controllers.map(c=>c.name),...DATA.models.map(m=>m.controller)])]
+    .filter(n=>DATA.models.some(m=>m.controller===n));
+  document.getElementById('pr-ctrl-list').innerHTML=names.length
+    ? names.map(n=>`<label class="pr-opt"><input type="checkbox" class="pr-ctrl" value="${pe(n)}" checked><span>${pe(n)}</span></label>`).join('')
+    : '<div style="color:var(--text2);font-size:12px">Import your XML files first.</div>';
+  document.getElementById('print-modal').classList.add('open');
+}
+
+function ppBox(){ return '<span class="pp-box"></span>'; }
+function ppBlank(){ return '<span class="pp-blank"></span>'; }
+function ppVal(v,blank){ return v ? pml(v) : (blank ? ppBlank() : ''); }
+function ppCh(m){
+  if(m.ctrlRelCh!=null) return `Ch ${fmtCh(m.ctrlRelCh)}–${fmtCh(m.ctrlEndCh)}`;
+  if(m.absStartCh)      return `${fmtCh(m.absStartCh)}–${fmtCh(m.endCh)}`;
+  return '–';
+}
+function ppLrRep(w){
+  const p=[];
+  if(w.lrUnit)  p.push(`LR ${pe(w.lrUnit)}${w.lrPort?' / port '+pe(w.lrPort):''}`);
+  if(w.repUnit) p.push(`Repeater ${pe(w.repUnit)}${w.repPort?' / port '+pe(w.repPort):''}`);
+  return p.join('<br>');
+}
+function ppWireCell(w,blank){
+  return `<div>${ppVal(w.color,blank)}</div><div class="pp-small">${ppVal(w.connector,blank)}</div>`;
+}
+function ppPropCell(m,o){
+  return `<div class="pp-name">${pe(m.name)}</div><div class="pp-small">${pe(m.type)}${m.stringType&&m.stringType!=='RGB Nodes'?' · '+pe(m.stringType):''}</div>`
+    +(o.sub&&m.subModels?.length?`<div class="pp-small">Sub-models: ${m.subModels.map(pe).join(', ')}</div>`:'');
+}
+function ppHead(title,sub){
+  const d=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+  return `<div class="pp-head"><h1>${title}</h1><div class="pp-sub">${pe(DATA.show?.name||'xLights Show')}<br>Printed ${d}</div></div>${sub||''}`;
+}
+
+function ppPortSheet(ctrl,models,o){
+  const byPort=[...models].sort((a,b)=>(a.port??999)-(b.port??999)||(a.absStartCh??a.ctrlRelCh??0)-(b.absStartCh??b.ctrlRelCh??0));
+  const used=models.reduce((s,m)=>s+(m.channels||0),0);
+  const meta=ctrl?`<div class="pp-meta">
+      <span><b>IP:</b> ${pe(ctrl.ip||'–')}</span><span><b>Protocol:</b> ${pe(ctrl.protocol||'–')}</span>
+      ${ctrl.vendor||ctrl.model?`<span><b>Model:</b> ${pe((ctrl.vendor+' '+ctrl.model).trim())}</span>`:''}
+      ${ctrl.maxChannels?`<span><b>Max ch:</b> ${fmtCh(ctrl.maxChannels)}</span>`:''}
+      <span><b>Ch used:</b> ${fmtCh(used)}</span><span><b>Props:</b> ${models.length}</span>
+      ${ctrl.description?`<span>${pe(ctrl.description)}</span>`:''}</div>`
+    :`<div class="pp-meta"><span>These props are not assigned to a controller in xLights.</span></div>`;
+  const chk=o.checks?'<th class="pp-chk">Inst</th><th class="pp-chk">Test</th>':'';
+  const rows=byPort.map(m=>{
+    const w=DATA.wiring[m.name]||{};
+    return `<tr>${o.checks?`<td class="pp-chk">${ppBox()}</td><td class="pp-chk">${ppBox()}</td>`:''}
+      <td class="pp-port">${m.port?'Port '+m.port:'–'}</td>
+      <td>${ppPropCell(m,o)}</td>
+      <td>${fmtCh(m.nodes)}</td><td>${ppCh(m)}</td><td>${pe(m.protocol||'')}</td>
+      <td>${ppWireCell(w,o.blanks)}</td>
+      <td>${ppVal(w.location,o.blanks)}${w.route?`<div class="pp-small">${pml(w.route)}</div>`:''}</td>
+      <td>${ppVal(w.power,false)}</td><td>${ppLrRep(w)}</td><td>${ppVal(w.notes,false)}</td></tr>`;
+  }).join('');
+  return `<div class="pp-section">${ppHead(pe(ctrl?ctrl.name:'No Controller'),meta)}
+    <table class="pp"><thead><tr>${chk}<th>Port</th><th>Prop</th><th>Nodes</th><th>Channels</th><th>Proto</th>
+      <th>Wire / Connector</th><th>Location / Route</th><th>Power</th><th>LR / Rep</th><th>Notes</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+function ppPropsByLocation(models,o){
+  const groups={};
+  models.forEach(m=>{ const loc=(DATA.wiring[m.name]?.location||'').trim()||'Location not recorded'; (groups[loc]=groups[loc]||[]).push(m); });
+  const locs=Object.keys(groups).sort((a,b)=>a==='Location not recorded'?1:b==='Location not recorded'?-1:a.localeCompare(b));
+  const chk=o.checks?'<th class="pp-chk">Inst</th><th class="pp-chk">Test</th>':'';
+  const body=locs.map(loc=>{
+    const rows=groups[loc].sort((a,b)=>a.name.localeCompare(b.name)).map(m=>{
+      const w=DATA.wiring[m.name]||{};
+      return `<tr>${o.checks?`<td class="pp-chk">${ppBox()}</td><td class="pp-chk">${ppBox()}</td>`:''}
+        <td>${ppPropCell(m,o)}</td>
+        <td>${pe(ctrlLabel(m.controller))}${m.port?`<div class="pp-port">Port ${m.port}</div>`:''}</td>
+        <td>${fmtCh(m.nodes)}</td><td>${ppCh(m)}</td>
+        <td>${ppWireCell(w,o.blanks)}</td><td>${ppVal(w.route,false)}</td>
+        <td>${ppVal(w.power,false)}</td><td>${ppLrRep(w)}</td><td>${ppVal(w.notes,false)}</td></tr>`;
+    }).join('');
+    return `<div class="pp-loc">${pe(loc)} <span class="pp-small">(${groups[loc].length})</span></div>
+      <table class="pp"><thead><tr>${chk}<th>Prop</th><th>Controller / Port</th><th>Nodes</th><th>Channels</th>
+        <th>Wire / Connector</th><th>Route</th><th>Power</th><th>LR / Rep</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }).join('');
+  return `<div class="pp-section">${ppHead('Props by Location','<div class="pp-meta"><span>Work area by area. Tick Inst when the prop is mounted and wired, Test when it lights correctly.</span></div>')}${body}</div>`;
+}
+
+function ppLrSheets(ctrlNames){
+  let out='';
+  ctrlNames.forEach(cn=>{
+    const boards=(DATA.lrBoards||{})[cn]||[]; if(!boards.length) return;
+    const hints={};
+    DATA.models.filter(m=>m.controller===cn).forEach(m=>{ const w=DATA.wiring[m.name]; if(w?.lrUnit&&w?.lrPort) hints[`${w.lrUnit}:${w.lrPort}`]=m.name; });
+    const grids=boards.map(b=>`<div class="pp-lr"><h3>Unit ${pe(b.unit)}${b.label?' — '+pe(b.label):''}</h3><div class="pp-lr-grid">${
+      Array.from({length:32},(_,i)=>{
+        const lab=b.channels?.[i]||hints[`${b.unit}:${i+1}`]||'';
+        return `<div class="pp-lr-cell"><b>${i+1}</b>${pe(lab)}</div>`;
+      }).join('')}</div></div>`).join('');
+    out+=`<div class="pp-section">${ppHead('LR Boards — '+pe(cn),'')}${grids}</div>`;
+  });
+  return out;
+}
+
+function ppGroups(){
+  const body=DATA.groups.map(g=>`<div class="pp-grp"><h3>${pe(g.name)} <span class="pp-small">(${g.members.length})</span></h3>
+    <div>${g.members.map(pe).join(', ')}</div></div>`).join('');
+  return `<div class="pp-section">${ppHead('Model Groups','')}${body}</div>`;
+}
+
+function doPrint(){
+  const checked=id=>document.getElementById(id).checked;
+  const o={checks:checked('pr-checks'),sub:checked('pr-sub'),blanks:checked('pr-blanks')};
+  const sel=[...document.querySelectorAll('.pr-ctrl:checked')].map(i=>i.value);
+  if(!sel.length){ alert('Select at least one controller.'); return; }
+  const models=DATA.models.filter(m=>sel.includes(m.controller));
+  let html='';
+  if(checked('pr-ports')) sel.forEach(n=>{
+    const ctrl=DATA.controllers.find(c=>c.name===n)||null;
+    html+=ppPortSheet(ctrl,DATA.models.filter(m=>m.controller===n),o);
+  });
+  if(checked('pr-props')) html+=ppPropsByLocation(models,o);
+  if(checked('pr-lr'))    html+=ppLrSheets(sel);
+  if(checked('pr-groups')) html+=ppGroups();
+  if(!html){ alert('Select at least one sheet type.'); return; }
+  document.getElementById('print-root').innerHTML=html;
+  let st=document.getElementById('pp-page');
+  if(!st){ st=document.createElement('style'); st.id='pp-page'; document.head.appendChild(st); }
+  st.textContent=`@page{size:${document.getElementById('pr-orient').value};margin:0.5in}`;
+  closeModal('print-modal');
+  setTimeout(()=>window.print(),50);
+}
+window.addEventListener('afterprint',()=>{ const r=document.getElementById('print-root'); if(r) r.innerHTML=''; });
 
 boot();
 </script>
