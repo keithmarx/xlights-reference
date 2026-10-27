@@ -155,6 +155,19 @@ function parseNetworks(xml) {
   });
 }
 
+// Custom models without a PixelCount attribute store their layout in CustomModelCompressed
+// ("node,row,col;...") or the legacy CustomModel grid. The node count is the number of distinct node numbers.
+function countCustomNodes(m) {
+  const set = new Set();
+  const comp = m['@_CustomModelCompressed'];
+  if (comp) {
+    String(comp).split(';').forEach(e => { const n = parseInt(e.split(',')[0]); if (n > 0) set.add(n); });
+  } else if (m['@_CustomModel']) {
+    String(m['@_CustomModel']).split(/[;,|]/).forEach(t => { const n = parseInt(t); if (n > 0) set.add(n); });
+  }
+  return set.size;
+}
+
 function parseRgbEffects(xml) {
   const parser = new XMLParser({
     ignoreAttributes: false, attributeNamePrefix: '@_',
@@ -175,6 +188,7 @@ function parseRgbEffects(xml) {
     else if (m['@_NodesPerArch']  && m['@_NumArches'])  nodes = parseInt(m['@_NodesPerArch'])  * parseInt(m['@_NumArches']);
     else if (m['@_NodesPerCane']  && m['@_NumCanes'])   nodes = parseInt(m['@_NodesPerCane'])  * parseInt(m['@_NumCanes']);
     else if (m['@_NodesPerString']) nodes = parseInt(m['@_NodesPerString']) * parseInt(m['@_NumStrings'] || 1);
+    else if (displayAs==='Custom')       nodes = countCustomNodes(m);
 
     const channels  = displayAs==='DmxFloodlight' ? parseInt(m['@_DmxChannelCount']||3) : nodes*3;
     const startCh   = m['@_StartChannel'] || '';
@@ -247,6 +261,49 @@ app.delete('/api/wiring/:modelName',  requireAuth, (req,res) => {
   const data = loadData(u); if (data.wiring) delete data.wiring[decodeURIComponent(req.params.modelName)];
   saveData(data, u); res.json({ success:true });
 });
+// Bulk fill: merge wiring fields per model and replace LR boards per controller in one save.
+const WIRING_FIELDS = ['color','connector','location','route','power','lrUnit','lrPort','repUnit','repPort','notes'];
+const UNSAFE_KEYS   = new Set(['__proto__','constructor','prototype']);
+app.post('/api/bulk', requireAuth, (req, res) => {
+  try {
+    const u = req.session.user.username;
+    const data = loadData(u);
+    if (!data.wiring)   data.wiring   = {};
+    if (!data.lrBoards) data.lrBoards = {};
+    const { wiring, lrBoards } = req.body || {};
+    const today = new Date().toISOString().slice(0, 10);
+    let models = 0, boards = 0;
+    if (wiring && typeof wiring === 'object') {
+      for (const [name, patch] of Object.entries(wiring)) {
+        if (UNSAFE_KEYS.has(name) || !patch || typeof patch !== 'object') continue;
+        const cur = data.wiring[name] || {};
+        WIRING_FIELDS.forEach(f => {
+          const v = patch[f];
+          if (v !== undefined && v !== null && String(v).trim() !== '') cur[f] = String(v).trim();
+        });
+        cur.updatedAt = today;
+        data.wiring[name] = cur; models++;
+      }
+    }
+    if (lrBoards && typeof lrBoards === 'object') {
+      for (const [ctrl, list] of Object.entries(lrBoards)) {
+        if (UNSAFE_KEYS.has(ctrl) || !Array.isArray(list)) continue;
+        data.lrBoards[ctrl] = list
+          .map(b => ({
+            unit: parseInt(b && b.unit),
+            label: String((b && b.label) || ''),
+            channels: Array.from({ length: 32 }, (_, i) => String(((b && b.channels) || [])[i] || '')),
+          }))
+          .filter(b => Number.isFinite(b.unit))
+          .sort((a, b) => a.unit - b.unit);
+        boards++;
+      }
+    }
+    saveData(data, u);
+    res.json({ success: true, models, boards, wiring: data.wiring, lrBoards: data.lrBoards });
+  } catch (e) { console.error(e); res.status(500).json({ error: e.message }); }
+});
+
 app.put('/api/show', requireAuth, (req,res) => {
   const u = req.session.user.username;
   const data = loadData(u); data.show = { ...data.show, ...req.body };

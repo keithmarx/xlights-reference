@@ -222,6 +222,23 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
 .lr-badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;background:#0a0a1a;border:1px solid #2a2a5a;color:#8888cc;margin-left:6px;cursor:pointer;}
 .lr-badge:hover{border-color:var(--blue);color:var(--blue);}
 
+
+/* ── Bulk fill ── */
+.bf-modal{width:820px;max-width:96vw;}
+.bf-modal p{font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.6;}
+.bf-modal code{color:var(--gold);}
+.bf-modal textarea{width:100%;height:150px;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:4px;font-family:inherit;font-size:12px;resize:vertical;}
+.bf-modal textarea:focus{outline:none;border-color:var(--gold);}
+.bf-actions{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap;}
+.bf-actions input[type=file]{font-size:12px;color:var(--text2);}
+.bf-sum{font-size:12px;margin:10px 0 6px;color:var(--text);}
+.bf-sum b.ok{color:var(--green);} .bf-sum b.bad{color:var(--red);} .bf-sum b.warn{color:var(--gold);}
+.bf-scroll{max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:4px;}
+.bf-scroll table{width:100%;border-collapse:collapse;font-size:11px;}
+.bf-scroll th{position:sticky;top:0;background:var(--bg3);text-align:left;padding:4px 8px;color:var(--text2);text-transform:uppercase;font-size:10px;}
+.bf-scroll td{padding:3px 8px;border-top:1px solid var(--border);}
+.bf-scroll tr.ok td:first-child{color:var(--green);} .bf-scroll tr.bad td:first-child{color:var(--red);}
+
 /* ── Print dialog ── */
 .print-modal{width:560px;max-width:95vw;}
 .pr-group{margin-bottom:14px;}
@@ -313,6 +330,7 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
     <div class="header-btns">
       <div class="user-badge">Signed in as <span id="current-user"></span></div>
       <button class="hbtn" onclick="showImport()">↑ Import XML</button>
+      <button class="hbtn" onclick="openBulk()">⇪ Bulk Fill</button>
       <button class="hbtn" onclick="openPrint()">🖨 Print</button>
       <button class="hbtn" id="users-btn" onclick="openUsersModal()" style="display:none">👥 Users</button>
       <button class="hbtn" onclick="openHelp()">? Help</button>
@@ -472,6 +490,27 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
   </div>
 </div>
 
+<!-- ── Bulk fill modal ── -->
+<div class="modal-bg" id="bulk-modal">
+  <div class="modal bf-modal">
+    <h2>⇪ Bulk Fill — what's on the end of each wire</h2>
+    <p>Type or paste one line per LR port: <code>LR unit, port, then the xLights prop name</code>. Props are matched by name, so you don't need exact spelling. Everything is previewed before anything is saved.</p>
+    <textarea id="bf-text" spellcheck="false" placeholder="1-1  Gutter Garage&#10;1-2  Animated Bell-2&#10;1-3  Garage + Animated Bell&#10;2.1  Mega Tree&#10;3 4 Star-3"></textarea>
+    <p style="margin-top:6px">Separators can be <code>-</code> <code>.</code> <code>:</code> or a space. Put several props on one port with <code>+</code> or a comma. Lines starting with <code>#</code> are ignored.</p>
+    <div class="bf-actions">
+      <button class="hbtn" onclick="downloadBulkTemplate()">↓ Download CSV template</button>
+      <span style="font-size:11px;color:var(--text2)">or upload a filled-in CSV:</span>
+      <input type="file" id="bf-file" accept=".csv,.tsv,.txt" onchange="bulkLoadFile(this)">
+    </div>
+    <div class="bf-actions"><button class="hbtn" onclick="bulkPreview()">Preview</button></div>
+    <div id="bf-preview"></div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="btn-cancel" onclick="closeModal('bulk-modal')">Close</button>
+      <button class="btn-save" id="bf-apply" style="display:none" onclick="bulkApply()">Apply</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Print modal ── -->
 <div class="modal-bg" id="print-modal">
   <div class="modal print-modal">
@@ -559,6 +598,11 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
           <li style="padding:2px 0">→ <strong style="color:var(--text)">Repeater</strong> — unit number and port number if signal passes through a repeater board</li>
           <li style="padding:2px 0">→ <strong style="color:var(--text)">Notes</strong> — troubleshooting tips, known issues, anything else</li>
         </ul>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div style="color:var(--gold);font-size:13px;font-weight:bold;margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px;">Bulk Fill</div>
+        <p style="color:var(--text2)">Click <strong style="color:var(--text)">⇪ Bulk Fill</strong> to record LR boards fast. Type one line per LR port — <strong style="color:var(--text)">unit, port, prop name</strong> (e.g. <code>2-3 Mega Tree</code>). Each prop gets its LR unit/port set and the LR board channel label filled in. For more fields (wire color, location, notes…) download the CSV template, fill it in, and upload it.</p>
       </div>
 
       <div style="margin-bottom:16px">
@@ -1030,6 +1074,186 @@ function renderOverview(){
     <h3>Wiring Documentation</h3><div class="big">${wired} / ${DATA.models.length}</div>
     <div class="det">Models with wiring recorded.<br>Click any model row → Add Wiring Info<br>or click a port row in Controllers.</div>
   </div>`;
+}
+
+// ─── Bulk fill ───────────────────────────────────────────────────────────────
+let bulkPlan = null;
+const BF_ALIASES = {
+  prop:      ['prop','propname','model','modelname','name','xlightsprop'],
+  unit:      ['lrunit','unit','lrboard','board','lr'],
+  port:      ['lrport','lrchannel','lrout','lrchan'],
+  color:     ['wirecolor','color'],
+  connector: ['connector','connectortype'],
+  location:  ['location','physicallocation'],
+  route:     ['route','wireroute','wirerouterun','run'],
+  power:     ['power','powerinjection'],
+  repUnit:   ['repeaterunit','repunit'],
+  repPort:   ['repeaterport','repport'],
+  notes:     ['notes','note'],
+};
+function bfNorm(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+function bfCsv(s){ s=String(s??''); return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+
+function openBulk(){
+  document.getElementById('bf-text').value='';
+  document.getElementById('bf-file').value='';
+  document.getElementById('bf-preview').innerHTML='';
+  document.getElementById('bf-apply').style.display='none';
+  bulkPlan=null;
+  document.getElementById('bulk-modal').classList.add('open');
+}
+
+function downloadBulkTemplate(){
+  if(!DATA.models.length){ alert('Import your XML files first.'); return; }
+  const head=['Prop','xLights Controller','xLights Port','LR Unit','LR Port','Wire Color','Connector','Location','Route','Power','Notes'];
+  const list=[...DATA.models].sort((a,b)=>String(a.controller).localeCompare(String(b.controller))||(a.port??999)-(b.port??999)||a.name.localeCompare(b.name));
+  const rows=list.map(m=>{ const w=DATA.wiring[m.name]||{};
+    return [m.name,m.controller,m.port??'',w.lrUnit||'',w.lrPort||'',w.color||'',w.connector||'',w.location||'',w.route||'',w.power||'',w.notes||'']; });
+  const csv=[head,...rows].map(r=>r.map(bfCsv).join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='xlights-wiring-template.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+function bulkLoadFile(el){
+  const f=el.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ document.getElementById('bf-text').value=String(r.result||''); bulkPreview(); };
+  r.readAsText(f);
+}
+
+function bfParseDelimited(text){
+  const first=text.split(/\r?\n/)[0]||'';
+  const delim=first.includes('\t')?'\t':',';
+  const rows=[]; let row=[], cur='', q=false;
+  const endRow=()=>{ row.push(cur); cur=''; if(row.some(c=>c.trim()!=='')) rows.push(row); row=[]; };
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
+    else if(ch==='"') q=true;
+    else if(ch===delim){ row.push(cur); cur=''; }
+    else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&text[i+1]==='\n') i++; endRow(); }
+    else cur+=ch;
+  }
+  if(cur!==''||row.length) endRow();
+  return rows;
+}
+
+// Returns [{raw, prop, unit, port, extras}]
+function bfParseInput(text){
+  text=String(text||'').replace(/^﻿/,'');
+  const lines=text.split(/\r?\n/).filter(l=>l.trim()&&!l.trim().startsWith('#'));
+  if(!lines.length) return [];
+  const firstCells=bfParseDelimited(lines[0])[0]||[];
+  const hdr=firstCells.map(bfNorm);
+  const isCsv=hdr.length>1 && hdr.some(h=>BF_ALIASES.prop.includes(h));
+  const out=[];
+  if(isCsv){
+    const idx={};
+    Object.entries(BF_ALIASES).forEach(([k,al])=>{ const i=hdr.findIndex(h=>al.includes(h)); if(i>=0) idx[k]=i; });
+    if(idx.port===undefined){ const i=hdr.indexOf('port'); if(i>=0) idx.port=i; }
+    bfParseDelimited(lines.join('\n')).slice(1).forEach(c=>{
+      const g=k=>idx[k]===undefined?'':String(c[idx[k]]??'').trim();
+      const extras={}; ['color','connector','location','route','power','repUnit','repPort','notes'].forEach(k=>{ const v=g(k); if(v) extras[k]=v; });
+      out.push({raw:c.join(' | '),prop:g('prop'),unit:g('unit'),port:g('port'),extras});
+    });
+  } else {
+    lines.forEach(l=>{
+      const m=l.match(/^\s*(\d+)[\s\-.:\/]+(\d+)[\s:=\-–—,]*(.+?)\s*$/);
+      if(!m){ out.push({raw:l.trim(),prop:'',unit:'',port:'',extras:{},bad:'Expected: unit, port, prop name'}); return; }
+      m[3].split(/\s*(?:;|\+|,)\s*/).filter(Boolean).forEach(name=>out.push({raw:l.trim(),prop:name,unit:m[1],port:m[2],extras:{}}));
+    });
+  }
+  return out;
+}
+
+function bfMatchModel(name){
+  const n=bfNorm(name); if(!n) return {status:'none'};
+  const all=DATA.models;
+  const exact=all.filter(m=>bfNorm(m.name)===n);
+  if(exact.length===1) return {status:'ok',model:exact[0]};
+  if(exact.length>1) return {status:'amb',cands:exact};
+  if(n.length<3) return {status:'none'};
+  const starts=all.filter(m=>bfNorm(m.name).startsWith(n));
+  if(starts.length===1) return {status:'ok',model:starts[0]};
+  if(starts.length>1) return {status:'amb',cands:starts};
+  const inc=all.filter(m=>bfNorm(m.name).includes(n));
+  if(inc.length===1) return {status:'ok',model:inc[0]};
+  if(inc.length>1) return {status:'amb',cands:inc};
+  return {status:'none'};
+}
+
+function bulkPreview(){
+  const box=document.getElementById('bf-preview');
+  if(!DATA.models.length){ box.innerHTML='<div class="bf-sum"><b class="bad">Import your XML files first.</b></div>'; return; }
+  const rows=bfParseInput(document.getElementById('bf-text').value);
+  const items=[]; let skipped=0;
+  rows.forEach(r=>{
+    if(r.bad){ items.push({ok:false,raw:r.raw,msg:r.bad}); return; }
+    const hasLr=r.unit!==''||r.port!=='', hasExtra=Object.keys(r.extras).length>0;
+    if(!r.prop){ if(hasLr||hasExtra) items.push({ok:false,raw:r.raw,msg:'No prop name'}); else skipped++; return; }
+    if(!hasLr&&!hasExtra){ skipped++; return; }
+    const mt=bfMatchModel(r.prop);
+    if(mt.status==='none'){ items.push({ok:false,raw:r.prop,msg:'No matching prop'}); return; }
+    if(mt.status==='amb'){ items.push({ok:false,raw:r.prop,msg:'Ambiguous: '+mt.cands.slice(0,4).map(m=>m.name).join(', ')+(mt.cands.length>4?'…':'')}); return; }
+    let unit=null,port=null;
+    if(hasLr){
+      unit=parseInt(r.unit); port=parseInt(r.port);
+      if(!(unit>=1&&unit<=999)||!(port>=1&&port<=32)){ items.push({ok:false,raw:r.prop,msg:`Bad LR unit/port (${r.unit||'–'}/${r.port||'–'}); port must be 1–32`}); return; }
+    }
+    items.push({ok:true,raw:r.prop,model:mt.model,unit,port,extras:r.extras});
+  });
+  bulkPlan=items.filter(i=>i.ok);
+  const bad=items.length-bulkPlan.length;
+  const lrCount=bulkPlan.filter(i=>i.unit!=null).length;
+  box.innerHTML=`<div class="bf-sum"><b class="ok">${bulkPlan.length}</b> ready (${lrCount} LR assignments)`
+    +(bad?` · <b class="bad">${bad}</b> need attention (skipped on apply)`:'')
+    +(skipped?` · ${skipped} blank rows ignored`:'')+`</div>`
+    +(items.length?`<div class="bf-scroll"><table><thead><tr><th></th><th>You entered</th><th>Matched prop</th><th>LR</th><th>Controller</th></tr></thead><tbody>${
+      items.map(i=>i.ok
+        ?`<tr class="ok"><td>✓</td><td>${pe(i.raw)}</td><td>${pe(i.model.name)}</td><td>${i.unit!=null?`Unit ${i.unit} · Port ${i.port}`:'<span style="color:var(--text2)">details only</span>'}</td><td>${pe(ctrlLabel(i.model.controller))}${i.model.port?' · port '+i.model.port:''}</td></tr>`
+        :`<tr class="bad"><td>✗</td><td>${pe(i.raw)}</td><td colspan="3" style="color:var(--red)">${pe(i.msg)}</td></tr>`).join('')}</tbody></table></div>`
+      :'<div class="bf-sum" style="color:var(--text2)">Nothing to apply yet.</div>');
+  document.getElementById('bf-apply').style.display=bulkPlan.length?'':'none';
+  document.getElementById('bf-apply').textContent=`Apply ${bulkPlan.length}`;
+}
+
+async function bulkApply(){
+  if(!bulkPlan||!bulkPlan.length) return;
+  const btn=document.getElementById('bf-apply'); btn.disabled=true;
+  try{
+    const wiring={}, slots={};   // slots: ctrl -> unit -> port -> [names]
+    bulkPlan.forEach(i=>{
+      const w=wiring[i.model.name]=wiring[i.model.name]||{};
+      Object.assign(w,i.extras);
+      if(i.unit!=null){
+        w.lrUnit=String(i.unit); w.lrPort=String(i.port);
+        const c=i.model.controller;
+        slots[c]=slots[c]||{}; slots[c][i.unit]=slots[c][i.unit]||{}; (slots[c][i.unit][i.port]=slots[c][i.unit][i.port]||[]).push(i.model.name);
+      }
+    });
+    const lrBoards={};
+    Object.entries(slots).forEach(([ctrl,units])=>{
+      const boards=((DATA.lrBoards||{})[ctrl]||[]).map(b=>({unit:Number(b.unit),label:b.label||'',channels:Array.from({length:32},(_,k)=>(b.channels||[])[k]||'')}));
+      Object.entries(units).forEach(([u,ports])=>{
+        u=Number(u);
+        let b=boards.find(x=>x.unit===u);
+        if(!b){ b={unit:u,label:'',channels:Array(32).fill('')}; boards.push(b); }
+        Object.entries(ports).forEach(([p,names])=>{ b.channels[Number(p)-1]=[...new Set(names)].join(', '); });
+      });
+      lrBoards[ctrl]=boards;
+    });
+    const r=await fetch('/api/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wiring,lrBoards})});
+    const j=await r.json();
+    if(!r.ok) throw new Error(j.error||'Save failed');
+    DATA.wiring=j.wiring||DATA.wiring; DATA.lrBoards=j.lrBoards||DATA.lrBoards;
+    renderAll();
+    document.getElementById('bf-preview').innerHTML=`<div class="bf-sum"><b class="ok">✓ Saved</b> — ${j.models} props updated, ${j.boards} controller LR board set(s) updated.</div>`;
+    document.getElementById('bf-apply').style.display='none'; bulkPlan=null;
+  }catch(e){
+    document.getElementById('bf-preview').insertAdjacentHTML('afterbegin',`<div class="bf-sum"><b class="bad">✗ ${pe(e.message)}</b></div>`);
+  }finally{ btn.disabled=false; }
 }
 
 // ─── Print ───────────────────────────────────────────────────────────────────

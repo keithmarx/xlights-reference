@@ -12,6 +12,8 @@ A self-hosted web app for documenting and troubleshooting your xLights lighting 
 - **Groups tab** — all xLights model groups with member lists and aliases
 - **Overview** — at-a-glance stats per controller (channels used, model count, IP)
 - **Wiring documentation** — per-model notes for wire color, connector type, physical location, wire route, power injection, LR receiver, repeater, and general notes
+- **Bulk Fill** — record what's on the end of each LR port in seconds: type `unit-port prop name` lines (e.g. `2-3 Mega Tree`) or upload a CSV; props match by name and the LR board grids fill themselves in
+- **Print sheets** — print-ready controller port sheets, props-by-location checklists, and LR board maps for use while installing
 - **Multi-user** — each user has their own independent show data; admin can manage users
 - **Persistent data** — all data survives container restarts via a Docker volume
 
@@ -43,6 +45,23 @@ Click **↑ Import XML** in the header. You'll need two files from your xLights 
 | `xlights_rgbeffects.xml` | Model layout (props, nodes, ports, groups) |
 
 You can upload either file independently to refresh just that section. **Wiring notes are always preserved** across re-imports.
+
+## Bulk Fill (LR boards and wiring)
+
+Click **⇪ Bulk Fill** in the header. Either:
+
+- **Type or paste lines** — `LR unit`, `LR port`, then the xLights prop name:
+
+  ```
+  1-1  Gutter Garage
+  1-3  Garage + Animated Bell
+  2.1  Mega Tree
+  ```
+
+  Separators can be `-`, `.`, `:` or a space; use `+` or a comma for several props on one port.
+- **Use the CSV template** — click *Download CSV template* (pre-filled with every prop, its controller and xLights port), fill in the `LR Unit` / `LR Port` columns and any other wiring columns you want, and upload it. Blank cells leave existing data untouched.
+
+Props are matched by name (exact, then prefix, then contains); ambiguous or unknown names are flagged in a preview and skipped. Nothing is saved until you click **Apply**.
 
 ## Configuration
 
