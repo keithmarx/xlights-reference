@@ -6,10 +6,19 @@ services:
       - "127.0.0.1:3030:3000"
     volumes:
       - xlights-data:/data
-      - /opt/xlights-reference/public:/app/public
     environment:
       - NODE_ENV=production
       - DATA_DIR=/data
+      # Everything below comes from .env (see .env.example). Empty values mean "not set".
+      - APP_URL=${APP_URL:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - MAIL_FROM=${MAIL_FROM:-}
+      - ADMIN_SETUP_TOKEN=${ADMIN_SETUP_TOKEN:-}
+      - SESSION_SECRET=${SESSION_SECRET:-}
+      - TRUST_PROXY=${TRUST_PROXY:-1}
 
 volumes:
   xlights-data:

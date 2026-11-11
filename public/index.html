@@ -28,6 +28,14 @@ a{color:var(--blue);}
 .auth-box .btn-primary:hover{background:#55bb55;}
 .auth-box .btn-primary:disabled{background:#444;color:#666;cursor:default;}
 .auth-error{color:var(--red);font-size:12px;margin-top:10px;min-height:16px;}
+.auth-ok{color:var(--green);font-size:12px;margin-top:10px;min-height:16px;}
+.auth-link{display:block;text-align:center;margin-top:14px;font-size:12px;color:var(--text2);cursor:pointer;background:none;border:none;font-family:inherit;width:100%;}
+.auth-link:hover{color:var(--gold);}
+.invite-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.invite-row .meta{color:var(--text2);margin-left:auto;font-size:11px;}
+#invite-email{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:4px;font-family:inherit;font-size:12px;}
+#invite-email:focus{outline:none;border-color:var(--gold);}
+.invite-link{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:4px;font-size:11px;margin-top:6px;}
 .auth-logo{text-align:center;font-size:32px;margin-bottom:16px;}
 
 /* ── Header ── */
@@ -297,9 +305,11 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
     <div class="auth-logo">🎄</div>
     <h1>xLights Show Reference</h1>
     <div class="sub">First-time setup — create your admin account</div>
+    <div class="form-row" id="setup-token-row" style="display:none"><label>Setup token <span style="color:#555">(ADMIN_SETUP_TOKEN)</span></label><input id="setup-token" type="password" autocomplete="off"></div>
     <div class="form-row"><label>Username</label><input id="setup-user" autocomplete="username"></div>
-    <div class="form-row"><label>Password <span style="color:#555">(min 6 chars)</span></label><input id="setup-pass" type="password" autocomplete="new-password"></div>
+    <div class="form-row"><label>Password <span style="color:#555">(min 10 chars)</span></label><input id="setup-pass" type="password" autocomplete="new-password"></div>
     <div class="form-row"><label>Confirm Password</label><input id="setup-pass2" type="password" autocomplete="new-password"></div>
+    <div class="form-row"><label>Email <span style="color:#555">(for password resets &amp; invites)</span></label><input id="setup-email" type="email" autocomplete="email"></div>
     <button class="btn-primary" onclick="doSetup()">Create Admin Account</button>
     <div class="auth-error" id="setup-err"></div>
   </div>
@@ -315,6 +325,48 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
     <div class="form-row"><label>Password</label><input id="login-pass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn-primary" id="login-btn" onclick="doLogin()">Sign In</button>
     <div class="auth-error" id="login-err"></div>
+    <button class="auth-link" onclick="show('screen-forgot')">Forgot password?</button>
+  </div>
+</div>
+
+<!-- ── Register (from invite link) ── -->
+<div class="auth-wrap" id="screen-register" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo">🎄</div>
+    <h1>xLights Show Reference</h1>
+    <div class="sub">You've been invited — create your account</div>
+    <div class="form-row"><label>Email</label><input id="reg-email" disabled></div>
+    <div class="form-row"><label>Username <span style="color:#555">(3–32: letters, numbers, _ -)</span></label><input id="reg-user" autocomplete="username"></div>
+    <div class="form-row"><label>Password <span style="color:#555">(min 10 chars)</span></label><input id="reg-pass" type="password" autocomplete="new-password"></div>
+    <div class="form-row"><label>Confirm Password</label><input id="reg-pass2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()"></div>
+    <button class="btn-primary" id="reg-btn" onclick="doRegister()">Create Account</button>
+    <div class="auth-error" id="reg-err"></div>
+  </div>
+</div>
+
+<!-- ── Forgot password ── -->
+<div class="auth-wrap" id="screen-forgot" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo">🎄</div>
+    <h1>Reset your password</h1>
+    <div class="sub">Enter your account email and we'll send a reset link</div>
+    <div class="form-row"><label>Email</label><input id="forgot-email" type="email" autocomplete="email" onkeydown="if(event.key==='Enter')doForgot()"></div>
+    <button class="btn-primary" id="forgot-btn" onclick="doForgot()">Send reset link</button>
+    <div class="auth-error" id="forgot-err"></div><div class="auth-ok" id="forgot-ok"></div>
+    <button class="auth-link" onclick="show('screen-login')">← Back to sign in</button>
+  </div>
+</div>
+
+<!-- ── Reset password (from emailed link) ── -->
+<div class="auth-wrap" id="screen-reset" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo">🎄</div>
+    <h1>Choose a new password</h1>
+    <div class="sub">You'll be signed out everywhere else</div>
+    <div class="form-row"><label>New password <span style="color:#555">(min 10 chars)</span></label><input id="reset-pass" type="password" autocomplete="new-password"></div>
+    <div class="form-row"><label>Confirm password</label><input id="reset-pass2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doReset()"></div>
+    <button class="btn-primary" id="reset-btn" onclick="doReset()">Set new password</button>
+    <div class="auth-error" id="reset-err"></div>
   </div>
 </div>
 
@@ -461,10 +513,20 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
     <h2>👥 User Management</h2>
     <div id="users-list"></div>
     <div class="add-user-section">
-      <h3>Add New User</h3>
+      <h3>Invite by email</h3>
+      <div id="invites-list"></div>
+      <div class="add-user-footer" style="margin-top:8px">
+        <input id="invite-email" type="email" placeholder="friend@example.com" style="flex:1;min-width:0" onkeydown="if(event.key==='Enter')sendInvite()">
+        <select id="invite-role"><option value="user">User</option><option value="admin">Admin</option></select>
+        <button class="btn-save" onclick="sendInvite()">Send invite</button>
+      </div>
+      <div class="modal-err" id="invite-msg"></div>
+    </div>
+    <div class="add-user-section">
+      <h3>Add New User <span style="color:#555;text-transform:none">(you set their password)</span></h3>
       <div class="add-user-grid">
         <div class="form-row"><label>Username</label><input id="new-username" placeholder="username"></div>
-        <div class="form-row"><label>Password</label><input id="new-password" type="password" placeholder="min 6 chars"></div>
+        <div class="form-row"><label>Password</label><input id="new-password" type="password" placeholder="min 10 chars"></div>
       </div>
       <div class="add-user-footer">
         <select id="new-role"><option value="user">User</option><option value="admin">Admin</option></select>
@@ -638,10 +700,21 @@ let ME   = null;
 let sortCol='startCh', sortDir=1, activeCtrl='all', expanded=new Set(), wireTarget=null;
 
 // ─── Boot ────────────────────────────────────────────────────────────────────
+let LINK_TOKEN = null;   // invite / reset token from the URL fragment (kept in memory only)
 async function boot() {
+  // Invite and reset links look like /#invite=TOKEN or /#reset=TOKEN. Read the token, then scrub it from the address bar/history.
+  const m = location.hash.match(/^#(invite|reset)=([A-Za-z0-9_-]+)$/);
+  if (m) {
+    history.replaceState(null, '', location.pathname + location.search);
+    LINK_TOKEN = m[2];
+    if (m[1] === 'reset') { show('screen-reset'); return; }
+    const r = await post('/api/invites/lookup', { token: LINK_TOKEN }).catch(() => ({}));
+    if (r.email) { document.getElementById('reg-email').value = r.email; show('screen-register'); return; }
+    show('screen-login'); setErr('login-err', r.error || 'This invite link is invalid or has expired.'); return;
+  }
   // Check setup
   const s = await fetch('/api/auth/needs-setup').then(r=>r.json()).catch(()=>({needsSetup:false}));
-  if (s.needsSetup) { show('screen-setup'); return; }
+  if (s.needsSetup) { document.getElementById('setup-token-row').style.display = s.requiresToken ? '' : 'none'; show('screen-setup'); return; }
   // Check auth
   const me = await fetch('/api/auth/me').then(r=>r.ok?r.json():null).catch(()=>null);
   if (!me) { show('screen-login'); return; }
@@ -660,7 +733,7 @@ async function afterLogin(user) {
 }
 
 function show(id) {
-  ['screen-setup','screen-login','app'].forEach(i => {
+  ['screen-setup','screen-login','screen-register','screen-forgot','screen-reset','app'].forEach(i => {
     const el = document.getElementById(i);
     el.style.display = (i===id) ? (i==='app'?'flex':'flex') : 'none';
   });
@@ -672,8 +745,8 @@ async function doSetup() {
   const u=v('setup-user'), p=v('setup-pass'), p2=v('setup-pass2');
   if (!u||!p) return setErr('setup-err','Username and password required.');
   if (p!==p2) return setErr('setup-err','Passwords do not match.');
-  if (p.length<6) return setErr('setup-err','Password must be at least 6 characters.');
-  const r = await post('/api/auth/setup',{username:u,password:p});
+  if (p.length<10) return setErr('setup-err','Password must be at least 10 characters.');
+  const r = await post('/api/auth/setup',{username:u,password:p,setupToken:v('setup-token'),email:v('setup-email')});
   if (r.success) await afterLogin(r.user);
   else setErr('setup-err', r.error||'Setup failed.');
 }
@@ -694,6 +767,39 @@ async function doLogout() {
   document.getElementById('login-pass').value='';
 }
 
+// ─── Register / forgot / reset ───────────────────────────────────────────────
+async function doRegister() {
+  const u=v('reg-user'), p=v('reg-pass'), p2=v('reg-pass2');
+  setErr('reg-err','');
+  if (!u||!p) return setErr('reg-err','Username and password required.');
+  if (p!==p2) return setErr('reg-err','Passwords do not match.');
+  if (p.length<10) return setErr('reg-err','Password must be at least 10 characters.');
+  const btn=document.getElementById('reg-btn'); btn.disabled=true;
+  const r = await post('/api/auth/register',{token:LINK_TOKEN,username:u,password:p}).catch(()=>({error:'Network error'}));
+  btn.disabled=false;
+  if (r.success) { LINK_TOKEN=null; await afterLogin(r.user); }
+  else setErr('reg-err', r.error||'Registration failed.');
+}
+async function doForgot() {
+  setErr('forgot-err',''); setErr('forgot-ok','');
+  const email=v('forgot-email'); if (!email) return setErr('forgot-err','Enter your email address.');
+  const btn=document.getElementById('forgot-btn'); btn.disabled=true;
+  const r = await post('/api/auth/forgot',{email}).catch(()=>({error:'Network error'}));
+  btn.disabled=false;
+  if (r.success) setErr('forgot-ok', r.message); else setErr('forgot-err', r.error||'Something went wrong.');
+}
+async function doReset() {
+  setErr('reset-err','');
+  const p=v('reset-pass'), p2=v('reset-pass2');
+  if (p!==p2) return setErr('reset-err','Passwords do not match.');
+  if (p.length<10) return setErr('reset-err','Password must be at least 10 characters.');
+  const btn=document.getElementById('reset-btn'); btn.disabled=true;
+  const r = await post('/api/auth/reset',{token:LINK_TOKEN,password:p}).catch(()=>({error:'Network error'}));
+  btn.disabled=false;
+  if (r.success) { LINK_TOKEN=null; show('screen-login'); setErr('login-err',''); alert('Password changed. Please sign in.'); }
+  else setErr('reset-err', r.error||'Reset failed.');
+}
+
 // ─── Users modal ─────────────────────────────────────────────────────────────
 async function openUsersModal() {
   setErr('users-err','');
@@ -702,11 +808,13 @@ async function openUsersModal() {
   const users = await fetch('/api/users').then(r=>r.json());
   document.getElementById('users-list').innerHTML = users.map(u => `
     <div class="user-row">
-      <span class="user-name">${u.username}${u.username===ME.username?' <span style="color:#555;font-weight:normal">(you)</span>':''}</span>
-      <span class="user-role ${u.role}">${u.role}</span>
-      ${u.username!==ME.username?`<button class="user-del-btn" onclick="deleteUser('${u.username}')">Remove</button>`:''}
+      <span class="user-name">${pe(u.username)}${u.username===ME.username?' <span style="color:#555;font-weight:normal">(you)</span>':''}</span>
+      <span style="color:var(--text2);font-size:11px;cursor:pointer" title="Click to set email" onclick="setUserEmail('${jsq(u.username)}','${jsq(u.email||'')}')">${u.email?pe(u.email):'+ add email'}</span>
+      <span class="user-role ${u.role==='admin'?'admin':'user'}">${pe(u.role)}</span>
+      ${u.username!==ME.username?`<button class="user-del-btn" onclick="deleteUser('${jsq(u.username)}')">Remove</button>`:''}
     </div>`).join('');
   document.getElementById('users-modal').classList.add('open');
+  loadInvites();
 }
 async function addUser() {
   setErr('users-err','');
@@ -715,6 +823,39 @@ async function addUser() {
   const r = await post('/api/users',{username:u,password:p,role});
   if (r.success) { document.getElementById('new-username').value=''; document.getElementById('new-password').value=''; openUsersModal(); }
   else setErr('users-err', r.error||'Failed to add user.');
+}
+async function setUserEmail(username, current) {
+  const email = prompt(`Email for ${username} (leave empty to remove):`, current);
+  if (email === null) return;
+  const r = await fetch(`/api/users/${encodeURIComponent(username)}/email`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email.trim()})}).then(r=>r.json());
+  if (r.success) openUsersModal(); else setErr('users-err', r.error||'Failed to save email.');
+}
+async function loadInvites() {
+  const list = await fetch('/api/invites').then(r=>r.ok?r.json():[]).catch(()=>[]);
+  document.getElementById('invites-list').innerHTML = list.length ? list.map(i => `
+    <div class="invite-row"><span>${pe(i.email)}</span><span class="user-role ${i.role==='admin'?'admin':'user'}">${pe(i.role)}</span>
+      <span class="meta">expires ${pe(new Date(i.expiresAt).toLocaleDateString())}</span>
+      <button class="user-del-btn" onclick="revokeInvite('${jsq(i.id)}')">Revoke</button></div>`).join('')
+    : '<div style="color:var(--text2);font-size:12px">No pending invites.</div>';
+}
+async function sendInvite() {
+  const msg = document.getElementById('invite-msg'); msg.textContent=''; msg.style.color='';
+  const email=v('invite-email'); if (!email) { msg.textContent='Enter an email address.'; return; }
+  const r = await post('/api/invites',{email,role:document.getElementById('invite-role').value}).catch(()=>({error:'Network error'}));
+  if (!r.success) { msg.textContent = r.error||'Failed to send invite.'; return; }
+  document.getElementById('invite-email').value='';
+  if (r.emailed) { msg.style.color='var(--green)'; msg.textContent = `✓ Invite emailed to ${r.email}`; }
+  else {
+    msg.style.color='var(--gold)';
+    msg.textContent = (r.mailError||'Email isn\'t configured')+' — send this link to them yourself (shown once):';
+    const inp=document.createElement('input'); inp.className='invite-link'; inp.readOnly=true; inp.value=r.link; inp.onclick=()=>inp.select();
+    msg.appendChild(inp);
+  }
+  loadInvites();
+}
+async function revokeInvite(id) {
+  const r = await fetch(`/api/invites/${encodeURIComponent(id)}`,{method:'DELETE'}).then(r=>r.json());
+  if (r.success) loadInvites();
 }
 async function deleteUser(username) {
   if (!confirm(`Remove user "${username}"?`)) return;
@@ -734,8 +875,11 @@ document.querySelectorAll('.modal-bg').forEach(el=>el.addEventListener('click',e
 function ctrlClass(c){ if(c.includes('16SPE'))return 'c-h16'; if(c.includes('LR'))return 'c-hlr'; if(c==='FPPBB')return 'c-fbb'; return 'c-none'; }
 function ctrlLabel(c){ if(c==='Hinks Pix Flex 16SPE v3')return 'Hinks 16SPE'; if(c==='Hinks Pix Flex LR v1')return 'HinksLR'; if(c==='No Controller')return 'No Ctrl'; return c; }
 function fmtCh(n){ return n!=null?Number(n).toLocaleString():'–'; }
-function hl(text,q){ if(!q)return text; const i=text.toLowerCase().indexOf(q); if(i<0)return text; return text.slice(0,i)+`<mark>${text.slice(i,i+q.length)}</mark>`+text.slice(i+q.length); }
-function esc(s){ return s.replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+function hl(text,q){ if(!q)return pe(text); const i=text.toLowerCase().indexOf(q); if(i<0)return pe(text); return pe(text.slice(0,i))+`<mark>${pe(text.slice(i,i+q.length))}</mark>`+pe(text.slice(i+q.length)); }
+// HTML-escape for text and attribute values. Every dynamic value interpolated into innerHTML must go through pe().
+function pe(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+// Escape for a single-quoted JS string literal inside an inline HTML attribute (onclick="fn('${jsq(x)}')").
+function jsq(s){ return pe(String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r/g,'\\r').replace(/\n/g,'\\n')); }
 
 // ─── Tabs ────────────────────────────────────────────────────────────────────
 document.addEventListener('click',e=>{
@@ -789,7 +933,7 @@ function buildFilters(){
   const ctrls=[...new Set(DATA.models.map(m=>m.controller))];
   const div=document.getElementById('ctrl-filters');
   div.innerHTML=`<button class="filter-btn active" data-cf="all">All</button>`+
-    ctrls.map(c=>`<button class="filter-btn" data-cf="${esc(c)}">${ctrlLabel(c)}</button>`).join('');
+    ctrls.map(c=>`<button class="filter-btn" data-cf="${pe(c)}">${pe(ctrlLabel(c))}</button>`).join('');
   div.onclick=e=>{
     if(!e.target.matches('[data-cf]'))return;
     activeCtrl=e.target.dataset.cf;
@@ -832,47 +976,47 @@ function filterModels(){
     const exp=expanded.has(m.name);
     const wire=DATA.wiring[m.name];
     const start=m.ctrlRelCh!=null
-      ?`<span class="ch">Ch ${fmtCh(m.ctrlRelCh)}</span><span class="ch2">${m.startChannel}</span>`
+      ?`<span class="ch">Ch ${fmtCh(m.ctrlRelCh)}</span><span class="ch2">${pe(m.startChannel)}</span>`
       :`<span class="ch">${fmtCh(m.absStartCh)}</span>`;
     const end=m.endCh?`<span class="ch">${fmtCh(m.endCh)}</span>`:m.ctrlEndCh?`<span class="ch">Ch ${fmtCh(m.ctrlEndCh)}</span>`:'–';
-    const port=m.port?`<span class="port-tag">Port ${m.port}</span>${m.protocol?` <span class="proto-tag">${m.protocol}</span>`:''}` :'–';
+    const port=m.port?`<span class="port-tag">Port ${m.port}</span>${m.protocol?` <span class="proto-tag">${pe(m.protocol)}</span>`:''}` :'–';
     const wireBadge=wire
-      ?`<span class="wire-badge has" onclick="openWire(event,'${esc(m.name)}')">📍 ${esc(wire.color||'wired')}</span>`
-      :`<span class="wire-badge none" onclick="openWire(event,'${esc(m.name)}')">+ wire</span>`;
+      ?`<span class="wire-badge has" onclick="openWire(event,'${jsq(m.name)}')">📍 ${pe(wire.color||'wired')}</span>`
+      :`<span class="wire-badge none" onclick="openWire(event,'${jsq(m.name)}')">+ wire</span>`;
     let detail='';
     if(exp){
       const w=wire||{};
       const wireHtml=wire?`<div class="wiring-inline">
-        ${w.color?`<span class="wf">Color:</span><span class="wv">${w.color}</span>&nbsp;&nbsp;`:''}
-        ${w.connector?`<span class="wf">Connector:</span><span class="wv">${w.connector}</span>&nbsp;&nbsp;`:''}
-        ${w.location?`<span class="wf">Location:</span><span class="wv">${w.location}</span><br>`:''}
-        ${w.route?`<span class="wf">Route:</span><span class="wv">${w.route}</span><br>`:''}
-        ${w.power?`<span class="wf">Power:</span><span class="wv">${w.power}</span><br>`:''}
-        ${w.lrUnit?`<span class="wf">LR:</span><span class="wv">Unit ${w.lrUnit}${w.lrPort?' Port '+w.lrPort:''}</span>&nbsp;&nbsp;`:''}
-        ${w.repUnit?`<span class="wf">Repeater:</span><span class="wv">Unit ${w.repUnit}${w.repPort?' Port '+w.repPort:''}</span>&nbsp;&nbsp;`:''}
-        ${w.notes?`<span class="wf">Notes:</span><span class="wv">${w.notes}</span>`:''}
+        ${w.color?`<span class="wf">Color:</span><span class="wv">${pe(w.color)}</span>&nbsp;&nbsp;`:''}
+        ${w.connector?`<span class="wf">Connector:</span><span class="wv">${pe(w.connector)}</span>&nbsp;&nbsp;`:''}
+        ${w.location?`<span class="wf">Location:</span><span class="wv">${pe(w.location)}</span><br>`:''}
+        ${w.route?`<span class="wf">Route:</span><span class="wv">${pe(w.route)}</span><br>`:''}
+        ${w.power?`<span class="wf">Power:</span><span class="wv">${pe(w.power)}</span><br>`:''}
+        ${w.lrUnit?`<span class="wf">LR:</span><span class="wv">Unit ${pe(w.lrUnit)}${w.lrPort?' Port '+pe(w.lrPort):''}</span>&nbsp;&nbsp;`:''}
+        ${w.repUnit?`<span class="wf">Repeater:</span><span class="wv">Unit ${pe(w.repUnit)}${w.repPort?' Port '+pe(w.repPort):''}</span>&nbsp;&nbsp;`:''}
+        ${w.notes?`<span class="wf">Notes:</span><span class="wv">${pe(w.notes)}</span>`:''}
       </div>`:'';
-      const subHtml=m.subModels?.length?`<div class="dsec"><h4>Sub-Models</h4><div class="pills">${m.subModels.map(s=>`<span class="pill-sub">${s}</span>`).join('')}</div></div>`:'';
-      const aliasHtml=m.aliases?.length?`<div class="dsec"><h4>Aliases</h4><div class="pills">${m.aliases.map(a=>`<span class="pill-alias">${a}</span>`).join('')}</div></div>`:'';
-      const grpHtml=m.groups?.length?`<div class="dsec"><h4>Groups</h4><div class="pills">${m.groups.map(g=>`<span class="pill-grp">${g}</span>`).join('')}</div></div>`:'';
+      const subHtml=m.subModels?.length?`<div class="dsec"><h4>Sub-Models</h4><div class="pills">${m.subModels.map(s=>`<span class="pill-sub">${pe(s)}</span>`).join('')}</div></div>`:'';
+      const aliasHtml=m.aliases?.length?`<div class="dsec"><h4>Aliases</h4><div class="pills">${m.aliases.map(a=>`<span class="pill-alias">${pe(a)}</span>`).join('')}</div></div>`:'';
+      const grpHtml=m.groups?.length?`<div class="dsec"><h4>Groups</h4><div class="pills">${m.groups.map(g=>`<span class="pill-grp">${pe(g)}</span>`).join('')}</div></div>`:'';
       const meta=`<div style="font-size:11px;color:var(--text2);margin-top:6px">
-        String: ${m.stringType} &nbsp;|&nbsp; Channels: ${fmtCh(m.channels)}
+        String: ${pe(m.stringType)} &nbsp;|&nbsp; Channels: ${fmtCh(m.channels)}
         ${m.brightness!=null?` &nbsp;|&nbsp; <span class="dim-ind">⬇ ${m.brightness}% brightness</span>`:''}
         ${m.hasFace?` &nbsp;|&nbsp; <span class="face-ind">🎭 singing face</span>`:''}
       </div>`;
       detail=`<tr class="detail-row"><td colspan="9">
         ${wireHtml}
-        <button class="edit-wire-btn" onclick="openWire(event,'${esc(m.name)}')">${wire?'Edit':'Add'} Wiring Info</button>
+        <button class="edit-wire-btn" onclick="openWire(event,'${jsq(m.name)}')">${wire?'Edit':'Add'} Wiring Info</button>
         <div style="margin-top:10px">${subHtml}${aliasHtml}${grpHtml}${meta}</div>
       </td></tr>`;
     }
-    return `<tr class="${exp?'exp':''}" onclick="toggleRow('${esc(m.name)}')">
+    return `<tr class="${exp?'exp':''}" onclick="toggleRow('${jsq(m.name)}')">
       <td style="color:var(--text2);font-size:11px">${exp?'▼':'▶'}</td>
       <td><strong>${hl(m.name,q)}</strong></td>
-      <td><span class="ttag">${m.type}</span></td>
+      <td><span class="ttag">${pe(m.type)}</span></td>
       <td>${start}</td><td>${end}</td>
       <td>${fmtCh(m.nodes)}</td>
-      <td><span class="ctag ${ctrlClass(m.controller)}">${ctrlLabel(m.controller)}</span></td>
+      <td><span class="ctag ${ctrlClass(m.controller)}">${pe(ctrlLabel(m.controller))}</span></td>
       <td>${port}</td><td>${wireBadge}</td>
     </tr>${detail}`;
   }).join('');
@@ -959,8 +1103,8 @@ function renderLrModal() {
   list.innerHTML = lrBoardsData.map((board, bi) => `
     <div class="lr-board">
       <div class="lr-board-head">
-        <span class="lr-unit-label">Unit ${board.unit}</span>
-        <input placeholder="Board label (e.g. Front Yard LR)" value="${esc(board.label)}"
+        <span class="lr-unit-label">Unit ${pe(board.unit)}</span>
+        <input placeholder="Board label (e.g. Front Yard LR)" value="${pe(board.label)}"
           oninput="lrBoardsData[${bi}].label=this.value">
         <button class="btn-del" style="padding:3px 10px;margin:0;font-size:11px"
           onclick="removeLrBoard(${bi})">Remove</button>
@@ -968,14 +1112,14 @@ function renderLrModal() {
       <div class="lr-channels">
         ${Array.from({length:32}, (_,i) => {
           const hint  = hints[`${board.unit}:${i+1}`] || '';
-          const val   = esc(board.channels[i] || '');
+          const val   = pe(board.channels[i] || '');
           const hasMod = !!hint;
           return `<div class="lr-ch">
             <span class="lr-ch-num">${i+1}</span>
-            <input value="${val}" placeholder="${hint ? esc(hint) : '—'}"
+            <input value="${val}" placeholder="${hint ? pe(hint) : '—'}"
               class="${hasMod && !board.channels[i] ? 'has-model' : ''}"
               oninput="lrBoardsData[${bi}].channels[${i}]=this.value"
-              title="${hint ? 'Wiring: '+esc(hint) : ''}">
+              title="${hint ? 'Wiring: '+pe(hint) : ''}">
           </div>`;
         }).join('')}
       </div>
@@ -1014,9 +1158,9 @@ function renderControllers(){
     const ports=models.length?models.map(m=>{
       const w=DATA.wiring[m.name];
       const chStr=m.ctrlRelCh!=null?`Ch ${fmtCh(m.ctrlRelCh)} – ${fmtCh(m.ctrlEndCh)}`:'';
-      const wireStr=w?`<span style="color:var(--green)">${w.color||'wired'}${w.location?' · '+w.location:''}</span>`:`<span style="color:#444">no wiring</span>`;
-      return `<div class="port-row" onclick="openWire(event,'${esc(m.name)}')">
-        <span class="pnum">Port ${m.port||'–'}</span><span class="pmodel">${m.name}</span>
+      const wireStr=w?`<span style="color:var(--green)">${pe(w.color||'wired')}${w.location?' · '+pe(w.location):''}</span>`:`<span style="color:#444">no wiring</span>`;
+      return `<div class="port-row" onclick="openWire(event,'${jsq(m.name)}')">
+        <span class="pnum">Port ${m.port||'–'}</span><span class="pmodel">${pe(m.name)}</span>
         <span class="pch">${chStr}</span><span class="pnodes">${fmtCh(m.nodes)} nodes</span>
         <span class="pwire">${wireStr}</span>
       </div>`;
@@ -1027,20 +1171,20 @@ function renderControllers(){
       : `📡 LR Boards`;
     const lrSummary = lrBoards.length ? `
       <div style="padding:6px 14px;background:#08080f;border-top:1px solid #1a1a2a;font-size:11px;display:flex;flex-wrap:wrap;gap:10px">
-        ${lrBoards.map(b=>`<span style="color:#8888cc">Unit ${b.unit}${b.label?' — '+b.label:''} <span style="color:#555">(${b.channels.filter(c=>c).length}/32 ch labeled)</span></span>`).join('')}
+        ${lrBoards.map(b=>`<span style="color:#8888cc">Unit ${pe(b.unit)}${b.label?' — '+pe(b.label):''} <span style="color:#555">(${(b.channels||[]).filter(c=>c).length}/32 ch labeled)</span></span>`).join('')}
       </div>` : '';
     return `<div class="ctrl-card ${cls(ctrl)}">
       <div class="ctrl-head">
-        <div><h3>${ctrl.name}</h3><div style="font-size:11px;color:var(--text2)">${ctrl.vendor} ${ctrl.model}${ctrl.description?' · '+ctrl.description:''}</div></div>
+        <div><h3>${pe(ctrl.name)}</h3><div style="font-size:11px;color:var(--text2)">${pe(ctrl.vendor)} ${pe(ctrl.model)}${ctrl.description?' · '+pe(ctrl.description):''}</div></div>
         <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
-          <button class="hbtn" style="font-size:11px;padding:4px 10px" onclick="openLrBoards(event,'${esc(ctrl.name)}')">${lrBtnLabel}</button>
-          <div class="ip"><a href="http://${ctrl.ip}" target="_blank">${ctrl.ip}</a></div>
+          <button class="hbtn" style="font-size:11px;padding:4px 10px" onclick="openLrBoards(event,'${jsq(ctrl.name)}')">${lrBtnLabel}</button>
+          <div class="ip"><a href="http://${pe(ctrl.ip)}" target="_blank" rel="noopener noreferrer">${pe(ctrl.ip)}</a></div>
         </div>
       </div>
       <div class="ctrl-meta">
-        <div class="cm"><div class="cl">Protocol</div><div class="cv">${ctrl.protocol}</div></div>
+        <div class="cm"><div class="cl">Protocol</div><div class="cv">${pe(ctrl.protocol)}</div></div>
         ${ctrl.maxChannels?`<div class="cm"><div class="cl">Max Ch</div><div class="cv">${ctrl.maxChannels.toLocaleString()}</div></div>`:''}
-        <div class="cm"><div class="cl">State</div><div class="cv" style="color:${ctrl.state==='Active'?'var(--green)':'var(--gold)'}">${ctrl.state}</div></div>
+        <div class="cm"><div class="cl">State</div><div class="cv" style="color:${ctrl.state==='Active'?'var(--green)':'var(--gold)'}">${pe(ctrl.state)}</div></div>
         <div class="cm"><div class="cl">Models</div><div class="cv">${models.length}</div></div>
       </div>
       ${lrSummary}
@@ -1053,9 +1197,9 @@ function renderControllers(){
 function renderGroups(){
   document.getElementById('grp-content').innerHTML=DATA.groups.map(g=>`
     <div class="grp-card">
-      <div class="grp-head"><h3>${g.name}</h3><span class="cnt">${g.members.length}</span></div>
-      ${g.aliases?.length?`<div class="grp-alias">${g.aliases.join(', ')}</div>`:''}
-      <div class="grp-members">${g.members.map(m=>`<div class="grp-member">${m}</div>`).join('')}</div>
+      <div class="grp-head"><h3>${pe(g.name)}</h3><span class="cnt">${g.members.length}</span></div>
+      ${g.aliases?.length?`<div class="grp-alias">${pe(g.aliases.join(', '))}</div>`:''}
+      <div class="grp-members">${g.members.map(m=>`<div class="grp-member">${pe(m)}</div>`).join('')}</div>
     </div>`).join('');
 }
 
@@ -1066,8 +1210,8 @@ function renderOverview(){
     const models=DATA.models.filter(m=>m.controller===ctrl.name);
     const usedCh=models.reduce((s,m)=>s+(m.channels||0),0);
     return `<div class="ov-card">
-      <h3>${ctrl.name}</h3><div class="big">${ctrl.ip||'No IP'}</div>
-      <div class="det">Protocol: ${ctrl.protocol}<br>Max Ch: ${ctrl.maxChannels?.toLocaleString()||'N/A'}<br>
+      <h3>${pe(ctrl.name)}</h3><div class="big">${pe(ctrl.ip||'No IP')}</div>
+      <div class="det">Protocol: ${pe(ctrl.protocol)}<br>Max Ch: ${ctrl.maxChannels?.toLocaleString()||'N/A'}<br>
       Connected models: ${models.length}<br>Channels used: ${usedCh.toLocaleString()} / ${ctrl.maxChannels?.toLocaleString()||'?'}</div>
     </div>`;
   }).join('')+`<div class="ov-card">
@@ -1257,7 +1401,6 @@ async function bulkApply(){
 }
 
 // ─── Print ───────────────────────────────────────────────────────────────────
-function pe(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function pml(s){ return pe(s).replace(/\n/g,'<br>'); }
 
 function openPrint(){
@@ -1390,6 +1533,8 @@ function doPrint(){
 }
 window.addEventListener('afterprint',()=>{ const r=document.getElementById('print-root'); if(r) r.innerHTML=''; });
 
+// An invite/reset link opened in a tab that already has the app loaded only changes the hash.
+window.addEventListener('hashchange',()=>{ if(/^#(invite|reset)=/.test(location.hash)) boot(); });
 boot();
 </script>
 </body>
