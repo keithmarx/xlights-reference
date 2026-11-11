@@ -69,9 +69,21 @@ The app works out of the box with no configuration required. Optional environmen
 
 | Variable | Default | Description |
 |---|---|---|
-| `SESSION_SECRET` | `xlights-change-this-secret` | Secret for session cookies — change this in production |
+| `SESSION_SECRET` | *(generated)* | Secret for session cookies, at least 16 characters. If unset, a random secret is generated once and kept in the data volume (`/data/.session-secret`) |
+| `ADMIN_SETUP_TOKEN` | *(none)* | If set, creating the first admin account requires this token, so a stranger can't claim a fresh install |
+| `TRUST_PROXY` | `1` | Number of reverse proxies in front of the app (used for client IPs / rate limiting). Set `0`/`false` if exposed directly |
+| `COOKIE_SECURE` | `auto` | `auto` marks the session cookie `Secure` when the request arrived over HTTPS (the bundled Apache config sends `X-Forwarded-Proto`); set `true`/`false` to force |
 | `DATA_DIR` | `/data` | Where show data is stored inside the container |
 | `PORT` | `3000` | Internal port (the compose file maps this to 3030 externally) |
+
+## Security notes
+
+- Passwords: 10–72 characters, bcrypt (cost 12; older hashes are upgraded on next login). Usernames are 3–32 letters, numbers, `_` or `-`, and are case-insensitive.
+- Logins are rate limited (10 failed attempts per 15 minutes per IP). Sessions are stored in `/data/sessions`, so they survive restarts, and are ended immediately when a user is removed or their password changes.
+- Changing your own password requires your current password.
+- Removing a user moves their show data aside (`show-data-<name>.json.deleted-<timestamp>`) instead of leaving it for a future account with the same name.
+- Show data and `users.json` are written atomically; the previous version of each show file is kept as `.bak`. A corrupt `users.json` stops the app instead of re-opening first-run setup.
+- The container starts as root only to fix ownership of the data volume, then runs as the unprivileged `node` user.
 
 To change the external port, edit the `ports` line in `docker-compose.yml`:
 ```yaml

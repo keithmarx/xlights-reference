@@ -10,6 +10,12 @@ services:
     environment:
       - NODE_ENV=production
       - DATA_DIR=/data
+      # Optional. A random session secret is generated into the data volume if this is unset.
+      # - SESSION_SECRET=<at least 16 random characters>
+      # Optional. If set, first-run admin creation requires this token (stops a stranger claiming a fresh install).
+      # - ADMIN_SETUP_TOKEN=<random string>
+      # Number of reverse proxies in front of the app (Apache = 1). Used for client IPs (rate limiting).
+      # - TRUST_PROXY=1
 
 volumes:
   xlights-data:
