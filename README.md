@@ -142,6 +142,8 @@ Then set up the Apache vhost from `apache-vhost.conf` (it needs `proxy`, `proxy_
 sudo a2enmod proxy proxy_http headers rewrite && sudo systemctl restart apache2
 ```
 
+**Email via Resend.** Any SMTP service works. For [Resend](https://resend.com): `SMTP_HOST=smtp.resend.com`, `SMTP_PORT=587`, `SMTP_USER=resend`, `SMTP_PASS=<an API key>`, and `MAIL_FROM` on a domain you've verified in Resend's dashboard (Domains). Create a separate API key for this app so it can be revoked independently, and restrict it to "Sending access" for that domain.
+
 Open your `APP_URL`, create the admin account (you'll be asked for the setup token), then check email:
 
 ```bash
