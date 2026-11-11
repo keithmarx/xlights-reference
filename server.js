@@ -11,6 +11,8 @@ const fs   = require('fs');
 const path = require('path');
 const { HttpError, readJson, writeFileAtomic, writeJsonAtomic } = require('./lib/storage');
 const FileSessionStore = require('./lib/session-store');
+const { TokenStore } = require('./lib/tokens');
+const mailer = require('./lib/mailer');
 
 const app        = express();
 const PORT       = process.env.PORT     || 3000;
@@ -24,6 +26,8 @@ const USERNAME_RE   = /^[A-Za-z0-9_-]{3,32}$/;  // rule for newly created accoun
 const SAFE_NAME_RE  = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/; // anything used to build a file name
 const UNSAFE_KEYS   = new Set(['__proto__', 'constructor', 'prototype']);
 const ROLES         = ['user', 'admin'];
+const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const RESET_TTL_MS  = 60 * 60 * 1000;
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
@@ -96,6 +100,10 @@ const loginLimiter = rateLimit({ ...limiterOpts, windowMs: 15 * 60 * 1000, limit
   message: { error: 'Too many attempts. Try again in a few minutes.' } });
 const setupLimiter = rateLimit({ ...limiterOpts, windowMs: 60 * 60 * 1000, limit: 10,
   message: { error: 'Too many attempts. Try again later.' } });
+const authLimiter = rateLimit({ ...limiterOpts, windowMs: 15 * 60 * 1000, limit: 20,
+  message: { error: 'Too many attempts. Try again in a few minutes.' } });
+const forgotLimiter = rateLimit({ ...limiterOpts, windowMs: 60 * 60 * 1000, limit: 5,
+  message: { error: 'Too many requests. Try again later.' } });
 const sensitiveLimiter = rateLimit({ ...limiterOpts, windowMs: 15 * 60 * 1000, limit: 30,
   message: { error: 'Too many requests. Try again in a few minutes.' } });
 
@@ -123,6 +131,17 @@ function validateNewUsername(username, users) {
     throw new HttpError(400, 'Username must be 3–32 characters: letters, numbers, "_" or "-"');
   if (users.some(u => u.username.toLowerCase() === username.toLowerCase()))
     throw new HttpError(400, 'Username already exists');
+}
+// Email: lower-cased, no whitespace/angle brackets (blocks header injection), reasonable length.
+function tryNormEmail(e) {
+  if (typeof e !== 'string') return null;
+  const v = e.trim().toLowerCase();
+  return v.length <= 254 && /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[^\s@<>"',;]+$/.test(v) ? v : null;
+}
+function normEmail(e) {
+  const v = tryNormEmail(e);
+  if (!v) throw new HttpError(400, 'Enter a valid email address');
+  return v;
 }
 function validatePassword(password) {
   if (typeof password !== 'string' || password.length < MIN_PASSWORD)
@@ -164,7 +183,7 @@ function requireAdmin(req, res, next) {
   if (req.user && req.user.role === 'admin') return next();
   res.status(403).json({ error: 'Forbidden' });
 }
-const publicUser = u => ({ username: u.username, role: u.role });
+const publicUser = u => ({ username: u.username, role: u.role, email: u.email || '' });
 
 // ── Auth routes ───────────────────────────────────────────────────────────────
 const SETUP_TOKEN = process.env.ADMIN_SETUP_TOKEN || '';
@@ -181,13 +200,14 @@ app.get('/api/auth/needs-setup', wrap((_req, res) => {
 
 app.post('/api/auth/setup', setupLimiter, wrap(async (req, res) => {
   if (loadUsers().length > 0) throw new HttpError(400, 'Setup already complete');
-  const { username, password, setupToken } = req.body || {};
+  const { username, password, setupToken, email } = req.body || {};
   if (SETUP_TOKEN && !sameToken(setupToken || '', SETUP_TOKEN)) throw new HttpError(403, 'Invalid setup token');
   validateNewUsername(username, []);
   validatePassword(password);
   const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
   if (loadUsers().length > 0) throw new HttpError(400, 'Setup already complete'); // re-check after the await
   const user = { username, passwordHash, role: 'admin', sessionVersion: 0 };
+  if (email) { user.email = normEmail(email); user.emailVerifiedAt = new Date().toISOString(); }   // lets the admin use "forgot password"
   saveUsers([user]);
   await startSession(req, user);
   res.json({ success: true, user: publicUser(user) });
@@ -272,6 +292,135 @@ app.put('/api/users/:username/password', requireAuth, sensitiveLimiter, wrap(asy
   if (self) req.session.user.v = user.sessionVersion;         // ...but keep this session
   res.json({ success: true });
 }));
+
+// ── Invites, registration & password reset ────────────────────────────────────
+// Registration is invite-only: an admin invites an email address, the invitee follows the emailed link and
+// chooses their own username and password. Using the link proves they control that address.
+const invites = new TokenStore(path.join(DATA_DIR, 'invites.json'));
+const resets  = new TokenStore(path.join(DATA_DIR, 'password-resets.json'));
+const INVALID_INVITE = 'This invite link is invalid or has expired';
+
+app.get('/api/invites', requireAuth, requireAdmin, (_req, res) => {
+  res.json(invites.list().map(({ id, email, role, createdBy, createdAt, expiresAt }) => ({ id, email, role, createdBy, createdAt, expiresAt })));
+});
+
+app.post('/api/invites', requireAuth, requireAdmin, sensitiveLimiter, wrap(async (req, res) => {
+  const email = normEmail(req.body && req.body.email);
+  const role = (req.body && req.body.role) || 'user';
+  if (!ROLES.includes(role)) throw new HttpError(400, 'Invalid role');
+  if (loadUsers().some(u => (u.email || '').toLowerCase() === email))
+    throw new HttpError(400, 'That email address already has an account');
+  // A new invite for the same address replaces any older one.
+  const raw = invites.create({ email, role, createdBy: req.user.username }, INVITE_TTL_MS, t => t.email === email);
+
+  let emailed = false, mailError = null;
+  if (mailer.configured()) {
+    try {
+      await mailer.send({
+        to: email,
+        subject: 'You are invited to xLights Show Reference',
+        text: `${req.user.username} invited you to xLights Show Reference.\n\n` +
+              `Create your account (link valid for 7 days):\n${mailer.appLink('invite=' + raw)}\n\n` +
+              `If you weren't expecting this, you can ignore this email.`,
+      });
+      emailed = true;
+    } catch (e) { console.error('Invite email failed:', e.message); mailError = 'The email could not be sent'; }
+  }
+  // If email isn't configured (or failed) the admin gets the link to pass on themselves. It is shown only to this admin.
+  const link = emailed ? undefined : `${(process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '')}/#invite=${raw}`;
+  res.json({ success: true, emailed, link, mailError, email });
+}));
+
+app.delete('/api/invites/:id', requireAuth, requireAdmin, (req, res) => {
+  if (!invites.revoke(req.params.id)) throw new HttpError(404, 'Invite not found');
+  res.json({ success: true });
+});
+
+// Lets the registration form show which address was invited.
+app.post('/api/invites/lookup', authLimiter, (req, res) => {
+  const inv = invites.find(req.body && req.body.token);
+  if (!inv) throw new HttpError(404, INVALID_INVITE);
+  res.json({ email: inv.email });
+});
+
+app.post('/api/auth/register', authLimiter, wrap(async (req, res) => {
+  const { token, username, password } = req.body || {};
+  if (!invites.find(token)) throw new HttpError(400, INVALID_INVITE);
+  validateNewUsername(username, loadUsers());
+  validatePassword(password);
+  const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
+  const inv = invites.find(token);                             // re-check after the await: invites are single-use
+  if (!inv) throw new HttpError(400, INVALID_INVITE);
+  const users = loadUsers();
+  validateNewUsername(username, users);
+  if (users.some(u => (u.email || '').toLowerCase() === inv.email)) throw new HttpError(400, 'That email address already has an account');
+  const user = { username, passwordHash, role: inv.role, email: inv.email, emailVerifiedAt: new Date().toISOString(), sessionVersion: 0 };
+  users.push(user);
+  saveUsers(users);
+  invites.consume(inv.id);
+  await startSession(req, user);
+  res.json({ success: true, user: publicUser(user) });
+}));
+
+// Forgot password. Always answers the same way (and before doing any work) so it can't be used to find
+// out which addresses have accounts.
+const resetCooldown = new Map();   // email -> last request time
+app.post('/api/auth/forgot', forgotLimiter, (req, res) => {
+  const email = tryNormEmail(req.body && req.body.email);
+  res.json({ success: true, message: 'If that address belongs to an account, a reset link is on its way.' });
+  if (!email || !mailer.configured()) return;
+  const last = resetCooldown.get(email) || 0;
+  if (Date.now() - last < 60 * 1000) return;
+  resetCooldown.set(email, Date.now());
+  setImmediate(async () => {
+    try {
+      const user = loadUsers().find(u => u.email && u.email.toLowerCase() === email);
+      if (!user) return;
+      const raw = resets.create({ username: user.username }, RESET_TTL_MS, t => t.username === user.username);
+      await mailer.send({
+        to: email,
+        subject: 'Reset your xLights Show Reference password',
+        text: `Someone asked to reset the password for "${user.username}".\n\n` +
+              `Choose a new password (link valid for 1 hour):\n${mailer.appLink('reset=' + raw)}\n\n` +
+              `If this wasn't you, ignore this email — your password has not changed.`,
+      });
+    } catch (e) { console.error('Password reset email failed:', e.message); }
+  });
+});
+
+app.post('/api/auth/reset', authLimiter, wrap(async (req, res) => {
+  const { token, password } = req.body || {};
+  const rec = resets.find(token);
+  if (!rec) throw new HttpError(400, 'This reset link is invalid or has expired');
+  validatePassword(password);
+  const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
+  const rec2 = resets.find(token);
+  if (!rec2) throw new HttpError(400, 'This reset link is invalid or has expired');
+  const users = loadUsers();
+  const user = users.find(u => u.username === rec2.username);
+  if (!user) throw new HttpError(400, 'This reset link is invalid or has expired');
+  user.passwordHash = passwordHash;
+  user.sessionVersion = (user.sessionVersion || 0) + 1;         // sign out every existing session
+  saveUsers(users);
+  resets.consume(rec2.id);
+  res.json({ success: true });
+}));
+
+// Existing accounts have no email on file; an admin can add one (needed for password reset).
+app.put('/api/users/:username/email', requireAuth, requireAdmin, (req, res) => {
+  const users = loadUsers();
+  const user = users.find(u => u.username === req.params.username);
+  if (!user) throw new HttpError(404, 'User not found');
+  const raw = req.body && req.body.email;
+  if (raw === '' || raw === null) { delete user.email; delete user.emailVerifiedAt; }
+  else {
+    const email = normEmail(raw);
+    if (users.some(u => u !== user && (u.email || '').toLowerCase() === email)) throw new HttpError(400, 'That email address is already in use');
+    user.email = email; user.emailVerifiedAt = new Date().toISOString();
+  }
+  saveUsers(users);
+  res.json({ success: true });
+});
 
 // ── XML Parsers ───────────────────────────────────────────────────────────────
 function parseXml(parser, xml) {
@@ -509,4 +658,5 @@ app.use((err, _req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });   // never leak internals (paths, parser messages) to clients
 });
 
-app.listen(PORT, () => console.log(`xLights Reference running on :${PORT}`));
+if (require.main === module) app.listen(PORT, () => console.log(`xLights Reference running on :${PORT}`));
+module.exports = app;

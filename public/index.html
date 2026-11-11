@@ -28,6 +28,14 @@ a{color:var(--blue);}
 .auth-box .btn-primary:hover{background:#55bb55;}
 .auth-box .btn-primary:disabled{background:#444;color:#666;cursor:default;}
 .auth-error{color:var(--red);font-size:12px;margin-top:10px;min-height:16px;}
+.auth-ok{color:var(--green);font-size:12px;margin-top:10px;min-height:16px;}
+.auth-link{display:block;text-align:center;margin-top:14px;font-size:12px;color:var(--text2);cursor:pointer;background:none;border:none;font-family:inherit;width:100%;}
+.auth-link:hover{color:var(--gold);}
+.invite-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.invite-row .meta{color:var(--text2);margin-left:auto;font-size:11px;}
+#invite-email{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:4px;font-family:inherit;font-size:12px;}
+#invite-email:focus{outline:none;border-color:var(--gold);}
+.invite-link{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:4px;font-size:11px;margin-top:6px;}
 .auth-logo{text-align:center;font-size:32px;margin-bottom:16px;}
 
 /* ── Header ── */
@@ -301,6 +309,7 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
     <div class="form-row"><label>Username</label><input id="setup-user" autocomplete="username"></div>
     <div class="form-row"><label>Password <span style="color:#555">(min 10 chars)</span></label><input id="setup-pass" type="password" autocomplete="new-password"></div>
     <div class="form-row"><label>Confirm Password</label><input id="setup-pass2" type="password" autocomplete="new-password"></div>
+    <div class="form-row"><label>Email <span style="color:#555">(for password resets &amp; invites)</span></label><input id="setup-email" type="email" autocomplete="email"></div>
     <button class="btn-primary" onclick="doSetup()">Create Admin Account</button>
     <div class="auth-error" id="setup-err"></div>
   </div>
@@ -316,6 +325,48 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
     <div class="form-row"><label>Password</label><input id="login-pass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn-primary" id="login-btn" onclick="doLogin()">Sign In</button>
     <div class="auth-error" id="login-err"></div>
+    <button class="auth-link" onclick="show('screen-forgot')">Forgot password?</button>
+  </div>
+</div>
+
+<!-- ── Register (from invite link) ── -->
+<div class="auth-wrap" id="screen-register" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo">🎄</div>
+    <h1>xLights Show Reference</h1>
+    <div class="sub">You've been invited — create your account</div>
+    <div class="form-row"><label>Email</label><input id="reg-email" disabled></div>
+    <div class="form-row"><label>Username <span style="color:#555">(3–32: letters, numbers, _ -)</span></label><input id="reg-user" autocomplete="username"></div>
+    <div class="form-row"><label>Password <span style="color:#555">(min 10 chars)</span></label><input id="reg-pass" type="password" autocomplete="new-password"></div>
+    <div class="form-row"><label>Confirm Password</label><input id="reg-pass2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()"></div>
+    <button class="btn-primary" id="reg-btn" onclick="doRegister()">Create Account</button>
+    <div class="auth-error" id="reg-err"></div>
+  </div>
+</div>
+
+<!-- ── Forgot password ── -->
+<div class="auth-wrap" id="screen-forgot" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo">🎄</div>
+    <h1>Reset your password</h1>
+    <div class="sub">Enter your account email and we'll send a reset link</div>
+    <div class="form-row"><label>Email</label><input id="forgot-email" type="email" autocomplete="email" onkeydown="if(event.key==='Enter')doForgot()"></div>
+    <button class="btn-primary" id="forgot-btn" onclick="doForgot()">Send reset link</button>
+    <div class="auth-error" id="forgot-err"></div><div class="auth-ok" id="forgot-ok"></div>
+    <button class="auth-link" onclick="show('screen-login')">← Back to sign in</button>
+  </div>
+</div>
+
+<!-- ── Reset password (from emailed link) ── -->
+<div class="auth-wrap" id="screen-reset" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo">🎄</div>
+    <h1>Choose a new password</h1>
+    <div class="sub">You'll be signed out everywhere else</div>
+    <div class="form-row"><label>New password <span style="color:#555">(min 10 chars)</span></label><input id="reset-pass" type="password" autocomplete="new-password"></div>
+    <div class="form-row"><label>Confirm password</label><input id="reset-pass2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doReset()"></div>
+    <button class="btn-primary" id="reset-btn" onclick="doReset()">Set new password</button>
+    <div class="auth-error" id="reset-err"></div>
   </div>
 </div>
 
@@ -462,7 +513,17 @@ mark{background:#333300;border-radius:2px;padding:0 2px;color:var(--text);}
     <h2>👥 User Management</h2>
     <div id="users-list"></div>
     <div class="add-user-section">
-      <h3>Add New User</h3>
+      <h3>Invite by email</h3>
+      <div id="invites-list"></div>
+      <div class="add-user-footer" style="margin-top:8px">
+        <input id="invite-email" type="email" placeholder="friend@example.com" style="flex:1;min-width:0" onkeydown="if(event.key==='Enter')sendInvite()">
+        <select id="invite-role"><option value="user">User</option><option value="admin">Admin</option></select>
+        <button class="btn-save" onclick="sendInvite()">Send invite</button>
+      </div>
+      <div class="modal-err" id="invite-msg"></div>
+    </div>
+    <div class="add-user-section">
+      <h3>Add New User <span style="color:#555;text-transform:none">(you set their password)</span></h3>
       <div class="add-user-grid">
         <div class="form-row"><label>Username</label><input id="new-username" placeholder="username"></div>
         <div class="form-row"><label>Password</label><input id="new-password" type="password" placeholder="min 10 chars"></div>
@@ -639,7 +700,18 @@ let ME   = null;
 let sortCol='startCh', sortDir=1, activeCtrl='all', expanded=new Set(), wireTarget=null;
 
 // ─── Boot ────────────────────────────────────────────────────────────────────
+let LINK_TOKEN = null;   // invite / reset token from the URL fragment (kept in memory only)
 async function boot() {
+  // Invite and reset links look like /#invite=TOKEN or /#reset=TOKEN. Read the token, then scrub it from the address bar/history.
+  const m = location.hash.match(/^#(invite|reset)=([A-Za-z0-9_-]+)$/);
+  if (m) {
+    history.replaceState(null, '', location.pathname + location.search);
+    LINK_TOKEN = m[2];
+    if (m[1] === 'reset') { show('screen-reset'); return; }
+    const r = await post('/api/invites/lookup', { token: LINK_TOKEN }).catch(() => ({}));
+    if (r.email) { document.getElementById('reg-email').value = r.email; show('screen-register'); return; }
+    show('screen-login'); setErr('login-err', r.error || 'This invite link is invalid or has expired.'); return;
+  }
   // Check setup
   const s = await fetch('/api/auth/needs-setup').then(r=>r.json()).catch(()=>({needsSetup:false}));
   if (s.needsSetup) { document.getElementById('setup-token-row').style.display = s.requiresToken ? '' : 'none'; show('screen-setup'); return; }
@@ -661,7 +733,7 @@ async function afterLogin(user) {
 }
 
 function show(id) {
-  ['screen-setup','screen-login','app'].forEach(i => {
+  ['screen-setup','screen-login','screen-register','screen-forgot','screen-reset','app'].forEach(i => {
     const el = document.getElementById(i);
     el.style.display = (i===id) ? (i==='app'?'flex':'flex') : 'none';
   });
@@ -674,7 +746,7 @@ async function doSetup() {
   if (!u||!p) return setErr('setup-err','Username and password required.');
   if (p!==p2) return setErr('setup-err','Passwords do not match.');
   if (p.length<10) return setErr('setup-err','Password must be at least 10 characters.');
-  const r = await post('/api/auth/setup',{username:u,password:p,setupToken:v('setup-token')});
+  const r = await post('/api/auth/setup',{username:u,password:p,setupToken:v('setup-token'),email:v('setup-email')});
   if (r.success) await afterLogin(r.user);
   else setErr('setup-err', r.error||'Setup failed.');
 }
@@ -695,6 +767,39 @@ async function doLogout() {
   document.getElementById('login-pass').value='';
 }
 
+// ─── Register / forgot / reset ───────────────────────────────────────────────
+async function doRegister() {
+  const u=v('reg-user'), p=v('reg-pass'), p2=v('reg-pass2');
+  setErr('reg-err','');
+  if (!u||!p) return setErr('reg-err','Username and password required.');
+  if (p!==p2) return setErr('reg-err','Passwords do not match.');
+  if (p.length<10) return setErr('reg-err','Password must be at least 10 characters.');
+  const btn=document.getElementById('reg-btn'); btn.disabled=true;
+  const r = await post('/api/auth/register',{token:LINK_TOKEN,username:u,password:p}).catch(()=>({error:'Network error'}));
+  btn.disabled=false;
+  if (r.success) { LINK_TOKEN=null; await afterLogin(r.user); }
+  else setErr('reg-err', r.error||'Registration failed.');
+}
+async function doForgot() {
+  setErr('forgot-err',''); setErr('forgot-ok','');
+  const email=v('forgot-email'); if (!email) return setErr('forgot-err','Enter your email address.');
+  const btn=document.getElementById('forgot-btn'); btn.disabled=true;
+  const r = await post('/api/auth/forgot',{email}).catch(()=>({error:'Network error'}));
+  btn.disabled=false;
+  if (r.success) setErr('forgot-ok', r.message); else setErr('forgot-err', r.error||'Something went wrong.');
+}
+async function doReset() {
+  setErr('reset-err','');
+  const p=v('reset-pass'), p2=v('reset-pass2');
+  if (p!==p2) return setErr('reset-err','Passwords do not match.');
+  if (p.length<10) return setErr('reset-err','Password must be at least 10 characters.');
+  const btn=document.getElementById('reset-btn'); btn.disabled=true;
+  const r = await post('/api/auth/reset',{token:LINK_TOKEN,password:p}).catch(()=>({error:'Network error'}));
+  btn.disabled=false;
+  if (r.success) { LINK_TOKEN=null; show('screen-login'); setErr('login-err',''); alert('Password changed. Please sign in.'); }
+  else setErr('reset-err', r.error||'Reset failed.');
+}
+
 // ─── Users modal ─────────────────────────────────────────────────────────────
 async function openUsersModal() {
   setErr('users-err','');
@@ -704,10 +809,12 @@ async function openUsersModal() {
   document.getElementById('users-list').innerHTML = users.map(u => `
     <div class="user-row">
       <span class="user-name">${pe(u.username)}${u.username===ME.username?' <span style="color:#555;font-weight:normal">(you)</span>':''}</span>
+      <span style="color:var(--text2);font-size:11px;cursor:pointer" title="Click to set email" onclick="setUserEmail('${jsq(u.username)}','${jsq(u.email||'')}')">${u.email?pe(u.email):'+ add email'}</span>
       <span class="user-role ${u.role==='admin'?'admin':'user'}">${pe(u.role)}</span>
       ${u.username!==ME.username?`<button class="user-del-btn" onclick="deleteUser('${jsq(u.username)}')">Remove</button>`:''}
     </div>`).join('');
   document.getElementById('users-modal').classList.add('open');
+  loadInvites();
 }
 async function addUser() {
   setErr('users-err','');
@@ -716,6 +823,39 @@ async function addUser() {
   const r = await post('/api/users',{username:u,password:p,role});
   if (r.success) { document.getElementById('new-username').value=''; document.getElementById('new-password').value=''; openUsersModal(); }
   else setErr('users-err', r.error||'Failed to add user.');
+}
+async function setUserEmail(username, current) {
+  const email = prompt(`Email for ${username} (leave empty to remove):`, current);
+  if (email === null) return;
+  const r = await fetch(`/api/users/${encodeURIComponent(username)}/email`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email.trim()})}).then(r=>r.json());
+  if (r.success) openUsersModal(); else setErr('users-err', r.error||'Failed to save email.');
+}
+async function loadInvites() {
+  const list = await fetch('/api/invites').then(r=>r.ok?r.json():[]).catch(()=>[]);
+  document.getElementById('invites-list').innerHTML = list.length ? list.map(i => `
+    <div class="invite-row"><span>${pe(i.email)}</span><span class="user-role ${i.role==='admin'?'admin':'user'}">${pe(i.role)}</span>
+      <span class="meta">expires ${pe(new Date(i.expiresAt).toLocaleDateString())}</span>
+      <button class="user-del-btn" onclick="revokeInvite('${jsq(i.id)}')">Revoke</button></div>`).join('')
+    : '<div style="color:var(--text2);font-size:12px">No pending invites.</div>';
+}
+async function sendInvite() {
+  const msg = document.getElementById('invite-msg'); msg.textContent=''; msg.style.color='';
+  const email=v('invite-email'); if (!email) { msg.textContent='Enter an email address.'; return; }
+  const r = await post('/api/invites',{email,role:document.getElementById('invite-role').value}).catch(()=>({error:'Network error'}));
+  if (!r.success) { msg.textContent = r.error||'Failed to send invite.'; return; }
+  document.getElementById('invite-email').value='';
+  if (r.emailed) { msg.style.color='var(--green)'; msg.textContent = `✓ Invite emailed to ${r.email}`; }
+  else {
+    msg.style.color='var(--gold)';
+    msg.textContent = (r.mailError||'Email isn\'t configured')+' — send this link to them yourself (shown once):';
+    const inp=document.createElement('input'); inp.className='invite-link'; inp.readOnly=true; inp.value=r.link; inp.onclick=()=>inp.select();
+    msg.appendChild(inp);
+  }
+  loadInvites();
+}
+async function revokeInvite(id) {
+  const r = await fetch(`/api/invites/${encodeURIComponent(id)}`,{method:'DELETE'}).then(r=>r.json());
+  if (r.success) loadInvites();
 }
 async function deleteUser(username) {
   if (!confirm(`Remove user "${username}"?`)) return;
@@ -1393,6 +1533,8 @@ function doPrint(){
 }
 window.addEventListener('afterprint',()=>{ const r=document.getElementById('print-root'); if(r) r.innerHTML=''; });
 
+// An invite/reset link opened in a tab that already has the app loaded only changes the hash.
+window.addEventListener('hashchange',()=>{ if(/^#(invite|reset)=/.test(location.hash)) boot(); });
 boot();
 </script>
 </body>

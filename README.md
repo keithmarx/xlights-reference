@@ -73,8 +73,24 @@ The app works out of the box with no configuration required. Optional environmen
 | `ADMIN_SETUP_TOKEN` | *(none)* | If set, creating the first admin account requires this token, so a stranger can't claim a fresh install |
 | `TRUST_PROXY` | `1` | Number of reverse proxies in front of the app (used for client IPs / rate limiting). Set `0`/`false` if exposed directly |
 | `COOKIE_SECURE` | `auto` | `auto` marks the session cookie `Secure` when the request arrived over HTTPS (the bundled Apache config sends `X-Forwarded-Proto`); set `true`/`false` to force |
+| `APP_URL` | *(none)* | Public address of the app (e.g. `https://xlights.keithmarx.com`). Required for emailed links; links are never built from the request's `Host` header |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | *(none)* | Outgoing email for invites and password resets. Port 587 uses STARTTLS (required by default), 465 uses implicit TLS; `SMTP_SECURE=true/false` and `SMTP_REQUIRE_TLS=false` override |
 | `DATA_DIR` | `/data` | Where show data is stored inside the container |
 | `PORT` | `3000` | Internal port (the compose file maps this to 3030 externally) |
+
+## Accounts, invites and password reset
+
+Registration is **invite-only**. There is no public sign-up page.
+
+1. The first visit creates the admin account (protect it with `ADMIN_SETUP_TOKEN`; add an email so you can reset your own password).
+2. An admin opens **Users → Invite by email**, enters an address and a role, and clicks **Send invite**.
+3. The invitee gets an email with a single-use link (valid 7 days). They choose their own username and password. Using the link proves they own the address.
+4. Admins can see pending invites and revoke them. A new invite to the same address replaces the old one.
+5. **Forgot password?** on the sign-in page emails a one-hour, single-use reset link to the account's address. It always shows the same message, so it can't be used to discover who has an account. Resetting signs the user out everywhere.
+
+If email isn't configured (or sending fails), the invite is still created and the admin is shown the link once to pass on themselves. Accounts created before this feature have no email; an admin can add one by clicking "+ add email" in the Users list. Invite and reset tokens are stored only as SHA-256 hashes and travel in the URL fragment (`#invite=…`), which browsers don't send to servers or log; the page removes it from the address bar after reading it.
+
+Run the tests with `npm test`.
 
 ## Security notes
 

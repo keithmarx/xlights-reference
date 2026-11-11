@@ -16,6 +16,14 @@ services:
       # - ADMIN_SETUP_TOKEN=<random string>
       # Number of reverse proxies in front of the app (Apache = 1). Used for client IPs (rate limiting).
       # - TRUST_PROXY=1
+      # Email (invites and password resets). Without these, invites still work: the admin is shown a link to send.
+      # Put SMTP_PASS in a .env file next to this compose file (not committed) and reference it as ${SMTP_PASS}.
+      # - APP_URL=https://xlights.keithmarx.com
+      # - SMTP_HOST=mail.keithmarx.com
+      # - SMTP_PORT=587
+      # - SMTP_USER=noreply@keithmarx.com
+      # - SMTP_PASS=${SMTP_PASS}
+      # - MAIL_FROM=xLights Reference <noreply@keithmarx.com>
 
 volumes:
   xlights-data:
