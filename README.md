@@ -123,7 +123,7 @@ Data is stored per user as `/data/show-data-{username}.json`.
 
 ## Deploying to your server
 
-Nothing needs to log in to the server remotely: you run one script there and it pulls the code from GitHub. These steps assume Docker with Compose v2, Apache as in `apache-vhost.conf`, and a checkout at `/opt/xlights-reference` (the compose file mounts `public/` from there).
+Nothing needs to log in to the server remotely: you run one script there and it pulls the code from GitHub. These steps assume Docker with Compose v2, Apache as in `apache-vhost.conf`, and a checkout at `/opt/xlights-reference`. The front end is baked into the image, so every change goes live through `./deploy/deploy.sh`.
 
 **First install**
 

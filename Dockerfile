@@ -4,6 +4,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY . .
+# Source files may be owner-only on the build host; the app runs as the unprivileged "node" user and must be able to read them.
+RUN chmod -R a+rX /app
 ENV NODE_ENV=production DATA_DIR=/data PORT=3000
 EXPOSE 3000
 VOLUME ["/data"]
