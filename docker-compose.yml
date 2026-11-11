@@ -10,20 +10,16 @@ services:
     environment:
       - NODE_ENV=production
       - DATA_DIR=/data
-      # Optional. A random session secret is generated into the data volume if this is unset.
-      # - SESSION_SECRET=<at least 16 random characters>
-      # Optional. If set, first-run admin creation requires this token (stops a stranger claiming a fresh install).
-      # - ADMIN_SETUP_TOKEN=<random string>
-      # Number of reverse proxies in front of the app (Apache = 1). Used for client IPs (rate limiting).
-      # - TRUST_PROXY=1
-      # Email (invites and password resets). Without these, invites still work: the admin is shown a link to send.
-      # Put SMTP_PASS in a .env file next to this compose file (not committed) and reference it as ${SMTP_PASS}.
-      # - APP_URL=https://xlights.keithmarx.com
-      # - SMTP_HOST=mail.keithmarx.com
-      # - SMTP_PORT=587
-      # - SMTP_USER=noreply@keithmarx.com
-      # - SMTP_PASS=${SMTP_PASS}
-      # - MAIL_FROM=xLights Reference <noreply@keithmarx.com>
+      # Everything below comes from .env (see .env.example). Empty values mean "not set".
+      - APP_URL=${APP_URL:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - MAIL_FROM=${MAIL_FROM:-}
+      - ADMIN_SETUP_TOKEN=${ADMIN_SETUP_TOKEN:-}
+      - SESSION_SECRET=${SESSION_SECRET:-}
+      - TRUST_PROXY=${TRUST_PROXY:-1}
 
 volumes:
   xlights-data:

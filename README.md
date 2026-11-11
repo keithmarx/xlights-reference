@@ -121,6 +121,35 @@ docker volume inspect xlights-reference_xlights-data
 
 Data is stored per user as `/data/show-data-{username}.json`.
 
+## Deploying to your server
+
+Nothing needs to log in to the server remotely: you run one script there and it pulls the code from GitHub. These steps assume Docker with Compose v2, Apache as in `apache-vhost.conf`, and a checkout at `/opt/xlights-reference` (the compose file mounts `public/` from there).
+
+**First install**
+
+```bash
+sudo git clone https://github.com/keithmarx/xlights-reference.git /opt/xlights-reference
+sudo chown -R "$USER": /opt/xlights-reference
+cd /opt/xlights-reference
+cp .env.example .env && chmod 600 .env
+nano .env        # set APP_URL, SMTP_*, MAIL_FROM and a random ADMIN_SETUP_TOKEN
+./deploy/deploy.sh main
+```
+
+Then set up the Apache vhost from `apache-vhost.conf` (it needs `proxy`, `proxy_http`, `headers` and `rewrite`):
+
+```bash
+sudo a2enmod proxy proxy_http headers rewrite && sudo systemctl restart apache2
+```
+
+Open your `APP_URL`, create the admin account (you'll be asked for the setup token), then check email:
+
+```bash
+docker compose exec xlights-reference node deploy/test-mail.js you@keithmarx.com
+```
+
+**Updating**: `./deploy/deploy.sh` (or `./deploy/deploy.sh some-branch`). Each run backs up the data volume to `backups/` (newest 5 kept), fast-forwards the checkout, rebuilds, and waits for the health check. If the app isn't healthy it prints the logs and the command to roll back.
+
 ## Updating
 
 ```bash
